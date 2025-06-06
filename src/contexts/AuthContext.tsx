@@ -5,7 +5,9 @@ import {
   getSpotifyAuthUrl, 
   exchangeCodeForTokens, 
   getCurrentUser,
-  refreshSpotifyToken 
+  refreshSpotifyToken,
+  isTokenExpired,
+  isTokenExpiringSoon
 } from '../utils/spotify';
 
 interface AuthContextType {
@@ -17,6 +19,7 @@ interface AuthContextType {
   setGuestUser: (name: string) => void;
   handleSpotifyCallback: (code: string) => Promise<void>;
   refreshToken: () => Promise<boolean>;
+  ensureValidToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,13 +44,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Auto-refresh token on app load if user exists
   useEffect(() => {
     const checkAndRefreshToken = async () => {
-      if (user?.refresh_token && isHost) {
-        await refreshToken();
+      if (user?.refresh_token && user?.token_expires_at && isHost) {
+        // Se o token expirou ou está prestes a expirar, renove automaticamente
+        if (isTokenExpired(user.token_expires_at) || isTokenExpiringSoon(user.token_expires_at)) {
+          console.log('Token expired or expiring soon, refreshing...');
+          await refreshToken();
+        }
       }
     };
 
     checkAndRefreshToken();
-  }, []);
+    
+    // Configurar verificação periódica do token (a cada 5 minutos)
+    const tokenCheckInterval = setInterval(checkAndRefreshToken, 5 * 60 * 1000);
+    
+    return () => clearInterval(tokenCheckInterval);
+  }, [user?.refresh_token, user?.token_expires_at, isHost]);
 
   const signInWithSpotify = async () => {
     setLoading(true);
@@ -105,6 +117,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
 
       setUser(updatedUser);
+      console.log('Token refreshed successfully');
       return true;
     } catch (error) {
       console.error('Erro ao renovar token:', error);
@@ -112,11 +125,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Função para garantir que sempre temos um token válido
+  const ensureValidToken = async (): Promise<string | null> => {
+    if (!user?.access_token) return null;
+
+    // Se o usuário não é host, retorna o token atual (convidados não têm refresh)
+    if (!isHost || !user.refresh_token || !user.token_expires_at) {
+      return user.access_token;
+    }
+
+    // Se o token expirou ou está prestes a expirar, tente renová-lo
+    if (isTokenExpired(user.token_expires_at) || isTokenExpiringSoon(user.token_expires_at)) {
+      const refreshed = await refreshToken();
+      if (!refreshed) {
+        console.error('Failed to refresh expired token');
+        return null;
+      }
+      // Retorna o novo token após refresh
+      return user.access_token;
+    }
+
+    return user.access_token;
+  };
+
   const signOut = async () => {
     setUser(null);
     setIsHost(false);
     localStorage.removeItem('spotify-party-user');
     localStorage.removeItem('is-host');
+    localStorage.removeItem('spotify_auth_code_used');
   };
 
   const setGuestUser = (name: string) => {
@@ -138,6 +175,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setGuestUser,
     handleSpotifyCallback,
     refreshToken,
+    ensureValidToken,
   };
 
   return (

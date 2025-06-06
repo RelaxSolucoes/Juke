@@ -26,17 +26,16 @@ export const HostDashboard: React.FC = () => {
     guests, 
     isPlaying, 
     currentTrack,
-    spotifyDeviceId,
     createParty,
     addTrackToQueue,
-    playTrack,
     pausePlayback,
     resumePlayback,
     skipToNext,
+    skipToPrevious,
     removeTrackFromQueue,
     leaveParty,
     searchTracks,
-    initializeSpotifyPlayer
+    getCurrentPlaybackState
   } = useParty();
 
   const [showCreateParty, setShowCreateParty] = useState(!currentParty);
@@ -45,15 +44,26 @@ export const HostDashboard: React.FC = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
-  const [playerReady, setPlayerReady] = useState(false);
-
+  // Monitorar estado de reprodução
   useEffect(() => {
-    if (currentParty && !playerReady) {
-      initializeSpotifyPlayer().then(() => {
-        setPlayerReady(true);
-      });
-    }
-  }, [currentParty, playerReady, initializeSpotifyPlayer]);
+    if (!currentParty) return;
+
+    const checkPlaybackState = async () => {
+      try {
+        await getCurrentPlaybackState();
+      } catch (error) {
+        // Ignorar erros silenciosamente
+      }
+    };
+
+    // Verificar estado inicial
+    checkPlaybackState();
+
+    // Verificar a cada 10 segundos
+    const interval = setInterval(checkPlaybackState, 10000);
+
+    return () => clearInterval(interval);
+  }, [currentParty, getCurrentPlaybackState]);
 
   const handleCreateParty = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,8 +108,8 @@ export const HostDashboard: React.FC = () => {
     }
   };
 
-  const handlePlayTrack = (track: any) => {
-    playTrack(track);
+  const handleAddToQueue = (track: any) => {
+    addTrackToQueue(track, user?.name);
   };
 
   if (showCreateParty) {
@@ -165,18 +175,11 @@ export const HostDashboard: React.FC = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* Spotify Device Status */}
-              {spotifyDeviceId ? (
-                <div className="flex items-center space-x-2 bg-green-600/20 text-green-400 px-3 py-2 rounded-lg">
-                  <Smartphone className="w-4 h-4" />
-                  <span className="text-sm">Spotify Conectado</span>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2 bg-yellow-600/20 text-yellow-400 px-3 py-2 rounded-lg">
-                  <Smartphone className="w-4 h-4" />
-                  <span className="text-sm">Conectando...</span>
-                </div>
-              )}
+              {/* Sistema Simplificado Status */}
+              <div className="flex items-center space-x-2 bg-blue-600/20 text-blue-400 px-3 py-2 rounded-lg">
+                <Smartphone className="w-4 h-4" />
+                <span className="text-sm">Sistema Simplificado</span>
+              </div>
 
               {/* Party Code */}
               <div className="flex items-center space-x-2">
@@ -241,15 +244,13 @@ export const HostDashboard: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={handlePlayPause}
-                      disabled={!spotifyDeviceId}
-                      className="bg-spotify-600 hover:bg-spotify-700 text-white p-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-spotify-600 hover:bg-spotify-700 text-white p-3 rounded-full transition-colors"
                     >
                       {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
                     </button>
                     <button
                       onClick={skipToNext}
-                      disabled={!spotifyDeviceId}
-                      className="bg-spotify-600 hover:bg-spotify-700 text-white p-3 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-spotify-600 hover:bg-spotify-700 text-white p-3 rounded-full transition-colors"
                     >
                       <SkipForward className="w-5 h-5" />
                     </button>
@@ -260,10 +261,7 @@ export const HostDashboard: React.FC = () => {
                   <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>Nenhuma música tocando</p>
                   <p className="text-sm">
-                    {!spotifyDeviceId 
-                      ? 'Aguarde a conexão com o Spotify...' 
-                      : 'Adicione músicas à fila para começar'
-                    }
+                    Adicione músicas à fila para começar
                   </p>
                 </div>
               )}
@@ -316,7 +314,7 @@ export const HostDashboard: React.FC = () => {
                       <p className="text-gray-400 text-xs">{formatDuration(track.duration_ms)}</p>
                     </div>
                     <button
-                      onClick={() => addTrackToQueue(track)}
+                      onClick={() => handleAddToQueue(track)}
                       className="bg-spotify-600 hover:bg-spotify-700 text-white p-2 rounded-lg transition-colors"
                     >
                       <Plus className="w-4 h-4" />
@@ -355,15 +353,9 @@ export const HostDashboard: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => handlePlayTrack(track)}
-                        disabled={!spotifyDeviceId}
-                        className="bg-spotify-600 hover:bg-spotify-700 text-white p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Play className="w-4 h-4" />
-                      </button>
-                      <button
                         onClick={() => removeTrackFromQueue(track.id)}
                         className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-colors"
+                        title="Remover da fila"
                       >
                         <X className="w-4 h-4" />
                       </button>

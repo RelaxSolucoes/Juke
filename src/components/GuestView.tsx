@@ -7,7 +7,8 @@ import {
   User, 
   LogOut,
   Play,
-  Users
+  Users,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useParty } from '../contexts/PartyContext';
@@ -39,6 +40,7 @@ export const GuestView: React.FC = () => {
       setSearchResults(results);
     } catch (error) {
       console.error('Erro na busca:', error);
+      alert('Erro ao buscar músicas. Verifique se o host está com Spotify ativo.');
     } finally {
       setSearching(false);
     }
@@ -49,44 +51,49 @@ export const GuestView: React.FC = () => {
     signOut();
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-      {/* Header */}
-      <div className="bg-black/30 backdrop-blur-sm border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Music className="w-8 h-8 text-purple-400" />
-                <div>
-                  <h1 className="text-xl font-bold text-white">{currentParty?.name}</h1>
-                  <p className="text-sm text-gray-300">Convidado: {user?.name}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="bg-white/20 rounded-lg px-4 py-2">
-                <span className="text-white font-mono text-lg">{currentParty?.code}</span>
-              </div>
-              
-              <button
-                onClick={handleLeave}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Sair</span>
-              </button>
-            </div>
-          </div>
+  if (!currentParty) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-spotify-900 via-green-900 to-emerald-900 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">
+            Festa não encontrada
+          </h2>
+          <p className="text-gray-300">
+            A festa pode ter sido encerrada ou não existe.
+          </p>
         </div>
       </div>
+    );
+  }
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-spotify-900 via-green-900 to-emerald-900">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white flex items-center">
+              <Music className="w-8 h-8 mr-3 text-green-400" />
+              {currentParty.name}
+            </h1>
+            <p className="text-gray-300 mt-1">
+              Bem-vindo(a), {user?.name}! Você está na festa como convidado.
+            </p>
+          </div>
+          
+          <button
+            onClick={handleLeave}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Sair da Festa</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Now Playing */}
+            {/* Current Track */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center">
                 <Play className="w-5 h-5 mr-2" />
@@ -132,7 +139,22 @@ export const GuestView: React.FC = () => {
                 <Search className="w-5 h-5 mr-2" />
                 Buscar e Adicionar Músicas
               </h2>
-              
+
+              <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4 mb-4">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="text-blue-200 font-medium mb-2">
+                      Sistema Simplificado
+                    </h3>
+                    <p className="text-blue-200/80 text-sm">
+                      Agora você pode buscar e adicionar músicas usando as credenciais do host!
+                      Não é necessário login individual no Spotify.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <form onSubmit={handleSearch} className="mb-4">
                 <div className="flex space-x-2">
                   <input
@@ -173,7 +195,7 @@ export const GuestView: React.FC = () => {
                       <p className="text-gray-400 text-xs">{formatDuration(track.duration_ms)}</p>
                     </div>
                     <button
-                      onClick={() => addTrackToQueue(track)}
+                      onClick={() => addTrackToQueue(track, user?.name)}
                       className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-lg transition-colors"
                       title="Adicionar à fila"
                     >

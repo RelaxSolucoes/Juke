@@ -3,14 +3,11 @@ import { Party, Track, Guest } from '../types';
 import { useAuth } from './AuthContext';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { 
-  searchTracks as spotifySearchTracks,
-  playTrack as spotifyPlayTrack,
-  addToQueue as spotifyAddToQueue,
-  pausePlayback as spotifyPausePlayback,
-  resumePlayback as spotifyResumePlayback,
-  skipToNext as spotifySkipToNext,
-  getPlaybackState,
-  makeSpotifyRequest
+  searchTracksWithHostCredentials,
+  addToHostQueue,
+  hostPlaybackControls,
+  saveHostCredentials,
+  generatePartyCode
 } from '../utils/spotify';
 import {
   createPartyInDB,
@@ -20,7 +17,6 @@ import {
   addTrackToQueueDB,
   getPartyQueue,
   removeTrackFromQueueDB,
-  updateCurrentTrack,
   deactivateParty,
   subscribeToPartyUpdates
 } from '../utils/supabase';
@@ -31,18 +27,17 @@ interface PartyContextType {
   guests: Guest[];
   isPlaying: boolean;
   currentTrack: Track | null;
-  spotifyDeviceId: string | null;
   createParty: (name: string) => Promise<string>;
   joinParty: (code: string, guestName: string) => Promise<boolean>;
-  addTrackToQueue: (track: any) => Promise<void>;
-  playTrack: (track: Track) => Promise<void>;
+  addTrackToQueue: (track: any, guestName?: string) => Promise<void>;
   pausePlayback: () => Promise<void>;
   resumePlayback: () => Promise<void>;
   skipToNext: () => Promise<void>;
+  skipToPrevious: () => Promise<void>;
   removeTrackFromQueue: (trackId: string) => Promise<void>;
   leaveParty: () => void;
   searchTracks: (query: string) => Promise<any[]>;
-  initializeSpotifyPlayer: () => Promise<void>;
+  getCurrentPlaybackState: () => Promise<any>;
 }
 
 const PartyContext = createContext<PartyContextType | undefined>(undefined);
@@ -60,36 +55,15 @@ interface PartyProviderProps {
 }
 
 export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
-  const { user, isHost, refreshToken } = useAuth();
+  const { user, isHost } = useAuth();
   const [currentParty, setCurrentParty] = useLocalStorage<Party | null>('current-party', null);
   const [queue, setQueue] = useState<Track[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
-  const [spotifyDeviceId, setSpotifyDeviceId] = useState<string | null>(null);
-  const [player, setPlayer] = useState<any>(null);
   const [realtimeSubscription, setRealtimeSubscription] = useState<any>(null);
 
-  const generatePartyCode = (): string => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 6; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  };
-
-  const handleSpotifyError = async (error: any, retryFn?: () => Promise<any>) => {
-    if (error.message === 'UNAUTHORIZED' && isHost) {
-      const refreshed = await refreshToken();
-      if (refreshed && retryFn) {
-        return await retryFn();
-      }
-    }
-    throw error;
-  };
-
-  // Load party data from database
+  // Carregar dados da festa do banco
   const loadPartyData = async (party: Party) => {
     try {
       const [queueData, guestsData] = await Promise.all([
@@ -100,18 +74,18 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
       setQueue(queueData);
       setGuests(guestsData);
     } catch (error) {
-      console.error('Error loading party data:', error);
+      console.error('Erro ao carregar dados da festa:', error);
     }
   };
 
-  // Setup real-time subscription
+  // Configurar subscription em tempo real
   const setupRealtimeSubscription = (partyId: string) => {
     if (realtimeSubscription) {
       realtimeSubscription.unsubscribe();
     }
 
     const subscription = subscribeToPartyUpdates(partyId, (payload) => {
-      console.log('Real-time update:', payload);
+      console.log('Atualização em tempo real:', payload);
       
       if (payload.table === 'tracks') {
         if (payload.eventType === 'INSERT') {
@@ -133,7 +107,7 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     setRealtimeSubscription(subscription);
   };
 
-  // Cleanup subscription on unmount
+  // Limpar subscription ao desmontar
   useEffect(() => {
     return () => {
       if (realtimeSubscription) {
@@ -142,7 +116,7 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     };
   }, [realtimeSubscription]);
 
-  // Setup real-time when party changes
+  // Configurar tempo real quando festa muda
   useEffect(() => {
     if (currentParty) {
       loadPartyData(currentParty);
@@ -150,83 +124,45 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     }
   }, [currentParty?.id]);
 
-  const initializeSpotifyPlayer = async () => {
-    if (!isHost || !user?.access_token) return;
-
-    return new Promise<void>((resolve) => {
-      if (window.Spotify) {
-        createPlayer();
-      } else {
-        window.onSpotifyWebPlaybackSDKReady = createPlayer;
-        
-        if (!document.querySelector('script[src="https://sdk.scdn.co/spotify-player.js"]')) {
-          const script = document.createElement('script');
-          script.src = 'https://sdk.scdn.co/spotify-player.js';
-          script.async = true;
-          document.body.appendChild(script);
-        }
-      }
-
-      function createPlayer() {
-        const spotifyPlayer = new window.Spotify.Player({
-          name: 'Spotify Party App',
-          getOAuthToken: (cb: (token: string) => void) => {
-            cb(user!.access_token!);
-          },
-          volume: 0.5
-        });
-
-        spotifyPlayer.addListener('ready', ({ device_id }: { device_id: string }) => {
-          console.log('Spotify player ready with device ID:', device_id);
-          setSpotifyDeviceId(device_id);
-          setPlayer(spotifyPlayer);
-          resolve();
-        });
-
-        spotifyPlayer.addListener('not_ready', ({ device_id }: { device_id: string }) => {
-          console.log('Device ID has gone offline:', device_id);
-        });
-
-        spotifyPlayer.addListener('player_state_changed', async (state: any) => {
-          if (state && currentParty) {
-            setIsPlaying(!state.paused);
-            if (state.track_window.current_track) {
-              const track = state.track_window.current_track;
-              const currentTrackData: Track = {
-                id: track.id,
-                spotify_id: track.id,
-                name: track.name,
-                artist: track.artists[0].name,
-                album: track.album.name,
-                duration_ms: track.duration_ms,
-                image_url: track.album.images[0]?.url,
-                added_by: user!.id,
-                added_by_name: user!.name,
-                party_id: currentParty.id,
-                created_at: new Date().toISOString(),
-              };
-              setCurrentTrack(currentTrackData);
-              
-              // Update current track in database
-              try {
-                await updateCurrentTrack(currentParty.id, track.id);
-              } catch (error) {
-                console.error('Error updating current track:', error);
-              }
-            }
-          }
-        });
-
-        spotifyPlayer.connect();
-      }
-    });
-  };
-
+  // Monitorar estado de reprodução do Spotify (apenas para hosts)
   useEffect(() => {
-    if (isHost && user?.access_token) {
-      initializeSpotifyPlayer();
-    }
-  }, [isHost, user?.access_token]);
+    if (!isHost || !currentParty) return;
+
+    const checkPlaybackState = async () => {
+      try {
+        const state = await hostPlaybackControls.getCurrentState(currentParty.code);
+        if (state && state.item) {
+          setIsPlaying(!state.is_paused);
+          
+          const track: Track = {
+            id: state.item.id,
+            spotify_id: state.item.id,
+            name: state.item.name,
+            artist: state.item.artists[0]?.name || 'Artista Desconhecido',
+            album: state.item.album?.name || 'Álbum Desconhecido',
+            duration_ms: state.item.duration_ms,
+            image_url: state.item.album?.images[0]?.url,
+            added_by: currentParty.host_id,
+            added_by_name: currentParty.host?.name || 'Host',
+            party_id: currentParty.id,
+            created_at: new Date().toISOString(),
+          };
+          
+          setCurrentTrack(track);
+        }
+      } catch (error) {
+        // Ignorar erros silenciosamente (pode não ter dispositivo ativo)
+      }
+    };
+
+    // Verificar estado inicial
+    checkPlaybackState();
+
+    // Verificar a cada 5 segundos
+    const interval = setInterval(checkPlaybackState, 5000);
+
+    return () => clearInterval(interval);
+  }, [isHost, currentParty?.code]);
 
   const createParty = async (name: string): Promise<string> => {
     if (!user) throw new Error('Usuário não autenticado');
@@ -252,12 +188,26 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
         updated_at: partyData.updated_at,
       };
 
+      // Salvar credenciais do host na festa
+      if (user.access_token && user.refresh_token) {
+        const saved = await saveHostCredentials(
+          partyCode,
+          user.access_token,
+          user.refresh_token,
+          3600 // 1 hora padrão
+        );
+        
+        if (!saved) {
+          console.warn('⚠️ Não foi possível salvar credenciais do host');
+        }
+      }
+
       setCurrentParty(newParty);
       setQueue([]);
       setGuests([]);
       return partyCode;
     } catch (error) {
-      console.error('Error creating party:', error);
+      console.error('Erro ao criar festa:', error);
       throw new Error('Erro ao criar festa. Tente novamente.');
     }
   };
@@ -284,7 +234,7 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
         updated_at: partyData.updated_at,
       };
 
-      // Add guest to database
+      // Adicionar convidado ao banco
       await addGuestToParty({
         name: guestName,
         party_id: party.id,
@@ -293,25 +243,29 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
       setCurrentParty(party);
       return true;
     } catch (error) {
-      console.error('Error joining party:', error);
+      console.error('Erro ao entrar na festa:', error);
       return false;
     }
   };
 
   const searchTracks = async (query: string): Promise<any[]> => {
-    if (!user?.access_token) return [];
+    if (!currentParty || !query.trim()) return [];
 
     try {
-      return await spotifySearchTracks(query, user.access_token);
+      // Usar credenciais do host para buscar (funciona para hosts e convidados)
+      return await searchTracksWithHostCredentials(query, currentParty.code);
     } catch (error) {
-      return await handleSpotifyError(error, () => 
-        spotifySearchTracks(query, user!.access_token!)
-      );
+      console.error('Erro ao buscar músicas:', error);
+      throw new Error('Erro ao buscar músicas. Verifique se o host está com Spotify ativo.');
     }
   };
 
-  const addTrackToQueue = async (track: any): Promise<void> => {
-    if (!currentParty || !user) return;
+  const addTrackToQueue = async (track: any, guestName?: string): Promise<void> => {
+    if (!currentParty) return;
+
+    // Determinar quem está adicionando a música
+    const addedByName = guestName || user?.name || 'Convidado';
+    const addedById = user?.id || 'guest';
 
     const trackData = {
       spotify_id: track.id,
@@ -321,74 +275,88 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
       duration_ms: track.duration_ms,
       image_url: track.album.images[0]?.url,
       preview_url: track.preview_url,
-      added_by: user.id,
-      added_by_name: user.name,
+      added_by: addedById,
+      added_by_name: addedByName,
       party_id: currentParty.id,
     };
 
     try {
+      // Adicionar ao banco de dados
       await addTrackToQueueDB(trackData);
-      // The real-time subscription will update the local state
+      
+      // Adicionar à fila do Spotify do host
+      await addToHostQueue(`spotify:track:${track.id}`, currentParty.code);
+      
+      console.log(`✅ Música "${track.name}" adicionada por ${addedByName}`);
     } catch (error) {
-      console.error('Error adding track to queue:', error);
+      console.error('Erro ao adicionar música à fila:', error);
       throw new Error('Erro ao adicionar música à fila');
     }
   };
 
-  const playTrack = async (track: Track): Promise<void> => {
-    if (!isHost || !user?.access_token || !spotifyDeviceId) return;
-
-    try {
-      await spotifyPlayTrack(`spotify:track:${track.spotify_id}`, user.access_token, spotifyDeviceId);
-    } catch (error) {
-      await handleSpotifyError(error, () =>
-        spotifyPlayTrack(`spotify:track:${track.spotify_id}`, user!.access_token!, spotifyDeviceId!)
-      );
-    }
-  };
-
   const pausePlayback = async (): Promise<void> => {
-    if (!isHost || !user?.access_token) return;
+    if (!currentParty) return;
 
     try {
-      await spotifyPausePlayback(user.access_token, spotifyDeviceId || undefined);
+      await hostPlaybackControls.pause(currentParty.code);
+      setIsPlaying(false);
     } catch (error) {
-      await handleSpotifyError(error, () =>
-        spotifyPausePlayback(user!.access_token!, spotifyDeviceId || undefined)
-      );
+      console.error('Erro ao pausar reprodução:', error);
+      throw new Error('Erro ao pausar reprodução');
     }
   };
 
   const resumePlayback = async (): Promise<void> => {
-    if (!isHost || !user?.access_token) return;
+    if (!currentParty) return;
 
     try {
-      await spotifyResumePlayback(user.access_token, spotifyDeviceId || undefined);
+      await hostPlaybackControls.play(currentParty.code);
+      setIsPlaying(true);
     } catch (error) {
-      await handleSpotifyError(error, () =>
-        spotifyResumePlayback(user!.access_token!, spotifyDeviceId || undefined)
-      );
+      console.error('Erro ao retomar reprodução:', error);
+      throw new Error('Erro ao retomar reprodução');
     }
   };
 
   const skipToNext = async (): Promise<void> => {
-    if (!isHost || !user?.access_token) return;
+    if (!currentParty) return;
 
     try {
-      await spotifySkipToNext(user.access_token, spotifyDeviceId || undefined);
+      await hostPlaybackControls.skipNext(currentParty.code);
     } catch (error) {
-      await handleSpotifyError(error, () =>
-        spotifySkipToNext(user!.access_token!, spotifyDeviceId || undefined)
-      );
+      console.error('Erro ao pular música:', error);
+      throw new Error('Erro ao pular música');
+    }
+  };
+
+  const skipToPrevious = async (): Promise<void> => {
+    if (!currentParty) return;
+
+    try {
+      await hostPlaybackControls.skipPrevious(currentParty.code);
+    } catch (error) {
+      console.error('Erro ao voltar música:', error);
+      throw new Error('Erro ao voltar música');
+    }
+  };
+
+  const getCurrentPlaybackState = async (): Promise<any> => {
+    if (!currentParty) return null;
+
+    try {
+      return await hostPlaybackControls.getCurrentState(currentParty.code);
+    } catch (error) {
+      console.error('Erro ao obter estado de reprodução:', error);
+      return null;
     }
   };
 
   const removeTrackFromQueue = async (trackId: string): Promise<void> => {
     try {
       await removeTrackFromQueueDB(trackId);
-      // The real-time subscription will update the local state
+      // A subscription em tempo real atualizará o estado local
     } catch (error) {
-      console.error('Error removing track from queue:', error);
+      console.error('Erro ao remover música da fila:', error);
       throw new Error('Erro ao remover música da fila');
     }
   };
@@ -398,7 +366,7 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
       try {
         await deactivateParty(currentParty.id);
       } catch (error) {
-        console.error('Error deactivating party:', error);
+        console.error('Erro ao desativar festa:', error);
       }
     }
 
@@ -412,7 +380,7 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     setCurrentTrack(null);
     setIsPlaying(false);
     
-    // Clear local storage
+    // Limpar localStorage
     localStorage.removeItem('current-party');
   };
 
@@ -422,18 +390,17 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     guests,
     isPlaying,
     currentTrack,
-    spotifyDeviceId,
     createParty,
     joinParty,
     addTrackToQueue,
-    playTrack,
     pausePlayback,
     resumePlayback,
     skipToNext,
+    skipToPrevious,
     removeTrackFromQueue,
     leaveParty,
     searchTracks,
-    initializeSpotifyPlayer,
+    getCurrentPlaybackState,
   };
 
   return (

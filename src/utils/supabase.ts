@@ -141,6 +141,31 @@ export const deactivateParty = async (partyId: string) => {
   if (error) throw error;
 };
 
+// Buscar credenciais do host para permitir que convidados façam buscas
+export const getPartyHostCredentials = async (hostId: string) => {
+  // Primeiro, vamos buscar na tabela de usuários/hosts
+  // Como não temos uma tabela específica, vamos simular a busca
+  // Em um sistema real, você salvaria as credenciais do host em uma tabela segura
+  
+  // Por enquanto, retornamos null para indicar que não encontramos as credenciais
+  // Isso forçará o sistema a usar apenas as credenciais locais do host
+  return null;
+};
+
+// Função para salvar credenciais do host (para implementação futura)
+export const saveHostCredentials = async (hostId: string, credentials: {
+  access_token: string;
+  refresh_token: string;
+  token_expires_at: string;
+}) => {
+  // Esta função seria implementada para salvar as credenciais do host
+  // em uma tabela segura no banco de dados
+  // Por segurança, as credenciais deveriam ser criptografadas
+  
+  console.log('saveHostCredentials não implementado ainda');
+  return null;
+};
+
 // Real-time subscriptions
 export const subscribeToPartyUpdates = (
   partyId: string,

@@ -2,7 +2,7 @@ Ao pedir para criar algo no supabase você deve:
 - Certificar-se que o conteúdo ainda não existe para evitar duplicitade.
 - Conferir os códigos antes de serem gerados para evitar erros
 - Informar de forma clara quando, onde e de que forma o código deve ser usado
-- Após concluir o passo de utilizar o sql o mesmo deve ser deletado para não ocupar espaço desnecessário e não confundir arquivo local com dados do supabase.
+- Após concluir o passo de utilizar o sql o mesmo deve ser deletado para não ocupar espaço desnecessário e não confundir arquivo local com dados do supabase. (eu mostro a tabela que temos, vc manda o código, eu executo, se sucesso eu te aviso e aí vc apaga o sql local. Se erro eu te passo e vc corrige. Se ok aí vc apaga.)
 
 IMPORTANTE:
 - Sempre conferir informações sobre api na documentação oficial do Spotify API: https://developer.spotify.com/documentation/web-api
@@ -16,5 +16,10 @@ IMPORTANTE:
 - Sempre garantir que o código seja escrito em português brasileiro.
 
 - Esse projeto não pode ser testado localhost, devido á falta de https
+- Toda mudança no código exige deploy na Vercel via: vercel --prod
+- Todo deply gera um url tipo: https://juke-lgd6uf4r3-ronald-melos-projects.vercel.app
+- Nosso projeto está em: https://juke-seven.vercel.app/
+- Sempre que adicionar um debug, lembre-se de remover depois de solucionado para manter o app limpo.
+- Sempre apague os arquivos .md não utilizados. Deixe somente 1 para Read.me
 
-- Nosso projeto ficará em: https://juke-seven.vercel.app/
+- Depois de uma implementação bem sucedida, sempre gere o arquivo readme.md e faça commit
