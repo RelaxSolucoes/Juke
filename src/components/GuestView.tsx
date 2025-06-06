@@ -1,28 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Music, 
   Search, 
   Plus, 
-  Clock, 
   User, 
   LogOut,
-  Play,
   Users,
-  AlertCircle
+  Check,
+  Clock,
+  Sparkles,
+  Zap,
+  Heart,
+  Star
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useParty } from '../contexts/PartyContext';
 import { formatDuration } from '../utils/spotify';
-import { NowPlaying } from './NowPlaying';
-import { SpotifyQueue } from './SpotifyQueue';
 
 export const GuestView: React.FC = () => {
   const { user, signOut } = useAuth();
   const { 
     currentParty, 
-    queue, 
     guests, 
-    currentTrack, 
     addTrackToQueue,
     leaveParty,
     searchTracks
@@ -31,36 +30,76 @@ export const GuestView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
+  const [addedTracks, setAddedTracks] = useState<Set<string>>(new Set());
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-
-    setSearching(true);
-    try {
-      const results = await searchTracks(searchQuery);
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Erro na busca:', error);
-      alert('Erro ao buscar músicas. Verifique se o host está com Spotify ativo.');
-    } finally {
-      setSearching(false);
+  // Busca AJAX em tempo real
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
     }
-  };
+
+    const timeoutId = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const results = await searchTracks(searchQuery);
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Erro na busca:', error);
+      } finally {
+        setSearching(false);
+      }
+    }, 500); // Debounce de 500ms
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchTracks]);
 
   const handleLeave = () => {
     leaveParty();
     signOut();
   };
 
+  const handleAddToQueue = async (track: any) => {
+    // Mostrar feedback imediato
+    setAddedTracks(prev => new Set([...prev, track.id]));
+    
+    try {
+      // Adicionar direto ao Spotify (sem Supabase por enquanto)
+      await addTrackToQueue(track, user?.name);
+      
+      console.log('✅ Música adicionada com sucesso:', track.name);
+      
+      // Manter feedback por 3 segundos
+      setTimeout(() => {
+        setAddedTracks(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(track.id);
+          return newSet;
+        });
+      }, 3000);
+    } catch (error) {
+      console.error('Erro ao adicionar música:', error);
+      
+      // Remover feedback em caso de erro
+      setAddedTracks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(track.id);
+        return newSet;
+      });
+      
+      // Mostrar erro visual (opcional)
+      alert('Erro ao adicionar música. Tente novamente.');
+    }
+  };
+
   if (!currentParty) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-spotify-900 via-green-900 to-emerald-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-white mb-4">
             Festa não encontrada
           </h2>
-          <p className="text-gray-300">
+          <p className="text-purple-200">
             A festa pode ter sido encerrada ou não existe.
           </p>
         </div>
@@ -69,158 +108,210 @@ export const GuestView: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-spotify-900 via-green-900 to-emerald-900">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-white flex items-center">
-              <Music className="w-8 h-8 mr-3 text-green-400" />
-              {currentParty.name}
-            </h1>
-            <p className="text-gray-300 mt-1">
-              Bem-vindo(a), {user?.name}! Você está na festa como convidado.
-            </p>
-          </div>
-          
-          <button
-            onClick={handleLeave}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Sair da Festa</span>
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Now Playing - Posição correta */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                <Play className="w-5 h-5 mr-2" />
-                Tocando Agora
-              </h2>
-              <NowPlaying />
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* Header Premium */}
+      <div className="bg-black/30 backdrop-blur-xl border-b border-white/10">
+        <div className="max-w-6xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl flex items-center justify-center">
+                <Music className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-white flex items-center">
+                  {currentParty.name}
+                  <Star className="w-5 h-5 ml-2 text-yellow-400" />
+                </h1>
+                <p className="text-purple-200">
+                  Bem-vindo(a), {user?.name}! • {guests.length} pessoas na festa
+                </p>
+              </div>
             </div>
+            
+            <button
+              onClick={handleLeave}
+              className="bg-red-500/20 hover:bg-red-500/30 text-red-300 px-4 py-2 rounded-xl transition-all flex items-center space-x-2 border border-red-500/30"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sair da Festa</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
-            {/* Search */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                <Search className="w-5 h-5 mr-2" />
-                Buscar e Adicionar Músicas
-              </h2>
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Busca Premium - Área Principal */}
+          <div className="lg:col-span-3">
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20 shadow-2xl">
+              {/* Header da Busca */}
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                  <Search className="w-10 h-10 text-white" />
+                </div>
+                <h2 className="text-3xl font-bold text-white mb-2 flex items-center justify-center">
+                  <Heart className="w-6 h-6 mr-2 text-pink-400" />
+                  Adicione Suas Músicas
+                  <Heart className="w-6 h-6 ml-2 text-pink-400" />
+                </h2>
+                <p className="text-purple-200">
+                  Busque e adicione suas músicas favoritas à festa! 🎶
+                </p>
+              </div>
 
-              <div className="bg-blue-500/20 border border-blue-500/30 rounded-lg p-4 mb-4">
-                <div className="flex items-start space-x-3">
-                  <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5" />
+              {/* Aviso Premium */}
+              <div className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/30 rounded-2xl p-6 mb-8">
+                <div className="flex items-start space-x-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-6 h-6 text-white" />
+                  </div>
                   <div className="flex-1">
-                    <h3 className="text-blue-200 font-medium mb-2">
-                      Sistema Simplificado
+                    <h3 className="text-pink-200 font-semibold text-lg mb-2">
+                      Você é o DJ! ✨
                     </h3>
-                    <p className="text-blue-200/80 text-sm">
-                      Agora você pode buscar e adicionar músicas usando as credenciais do host!
-                      Não é necessário login individual no Spotify.
+                    <p className="text-pink-200/80">
+                      Busque e adicione músicas á fila!
+                      Suas músicas serão adicionadas automaticamente! 🚀
                     </p>
                   </div>
                 </div>
               </div>
 
-              <form onSubmit={handleSearch} className="mb-4">
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-1 bg-white/20 border border-white/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="Buscar por música ou artista..."
-                  />
-                  <button
-                    type="submit"
-                    disabled={searching}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    {searching ? 'Buscando...' : 'Buscar'}
-                  </button>
+              {/* Campo de Busca Premium */}
+              <div className="relative mb-8">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Search className={`w-6 h-6 transition-colors ${searching ? 'text-pink-400 animate-spin' : 'text-pink-300'}`} />
                 </div>
-              </form>
-
-              {/* Search Results */}
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {searchResults.map((track) => (
-                  <div key={track.id} className="flex items-center space-x-3 bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-colors">
-                    <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
-                      {track.album.images[0] ? (
-                        <img 
-                          src={track.album.images[0].url} 
-                          alt={track.album.name}
-                          className="w-full h-full rounded-lg object-cover"
-                        />
-                      ) : (
-                        <Music className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-white font-medium">{track.name}</h4>
-                      <p className="text-gray-300 text-sm">{track.artists[0].name}</p>
-                      <p className="text-gray-400 text-xs">{formatDuration(track.duration_ms)}</p>
-                    </div>
-                    <button
-                      onClick={() => addTrackToQueue(track, user?.name)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-lg transition-colors"
-                      title="Adicionar à fila"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-white/20 border-2 border-white/30 rounded-2xl pl-12 pr-4 py-4 text-white text-lg placeholder-pink-300 focus:outline-none focus:ring-4 focus:ring-pink-500/50 focus:border-pink-400 transition-all duration-300"
+                  placeholder="🎵 Pesquisar..."
+                />
+                {searching && (
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
+                    <div className="w-6 h-6 border-2 border-pink-400 border-t-transparent rounded-full animate-spin"></div>
                   </div>
-                ))}
+                )}
               </div>
 
-              {searchResults.length === 0 && searchQuery && !searching && (
-                <div className="text-center py-4 text-gray-400">
-                  <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>Nenhum resultado encontrado</p>
-                  <p className="text-sm">Tente buscar por outro termo</p>
-                </div>
-              )}
-            </div>
+              {/* Resultados da Busca */}
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {searchResults.length === 0 && searchQuery && !searching && (
+                  <div className="text-center py-12 text-pink-300">
+                    <Music className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-xl">Nenhum resultado encontrado</p>
+                    <p className="text-sm">Tente buscar por outro termo</p>
+                  </div>
+                )}
 
-            {/* Queue - Substituída pela fila real */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                <Music className="w-5 h-5 mr-2" />
-                Fila Real do Spotify
-              </h2>
-              
-              <SpotifyQueue />
+                {searchResults.length === 0 && !searchQuery && (
+                  <div className="text-center py-12 text-pink-300">
+                    <Zap className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-xl">Busque</p>
+                    <p className="text-sm">Por músicas ou artistas</p>
+                  </div>
+                )}
+
+                {searchResults.map((track, index) => {
+                  const isAdded = addedTracks.has(track.id);
+                  return (
+                    <div 
+                      key={track.id} 
+                      className={`group flex items-center space-x-3 bg-white/5 hover:bg-white/10 rounded-2xl p-3 transition-all duration-300 transform hover:scale-[1.01] border border-white/10 hover:border-white/20 ${isAdded ? 'bg-green-500/20 border-green-400/50' : ''}`}
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      {/* Capa do Álbum - Menor no mobile */}
+                      <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden flex-shrink-0">
+                        {track.album.images[0] ? (
+                          <img 
+                            src={track.album.images[0].url} 
+                            alt={track.album.name}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-pink-600 to-purple-600 flex items-center justify-center">
+                            <Music className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                          </div>
+                        )}
+                        {isAdded && (
+                          <div className="absolute inset-0 bg-green-500/80 flex items-center justify-center">
+                            <Check className="w-6 h-6 sm:w-8 sm:h-8 text-white animate-bounce" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Informações da Música - Prioridade no mobile */}
+                      <div className="flex-1 min-w-0 pr-2">
+                        <h4 className="text-white font-semibold text-base sm:text-lg leading-tight group-hover:text-pink-200 transition-colors">
+                          {track.name}
+                        </h4>
+                        <p className="text-pink-300 text-sm leading-tight truncate">
+                          {track.artists[0].name}
+                        </p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <Clock className="w-3 h-3 text-pink-400 flex-shrink-0" />
+                          <span className="text-pink-400 text-xs">
+                            {formatDuration(track.duration_ms)}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Botão de Adicionar - Responsivo */}
+                      <button
+                        onClick={() => handleAddToQueue(track)}
+                        disabled={isAdded}
+                        className={`p-2 sm:p-3 rounded-xl transition-all duration-300 transform hover:scale-110 flex-shrink-0 ${
+                          isAdded 
+                            ? 'bg-green-500 text-white cursor-not-allowed' 
+                            : 'bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white shadow-lg hover:shadow-pink-500/25'
+                        }`}
+                        title={isAdded ? 'Adicionada!' : 'Adicionar à fila'}
+                      >
+                                                 {isAdded ? (
+                           <div className="flex items-center space-x-1">
+                             <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+                             <span className="hidden sm:inline text-xs font-medium">ADICIONADA</span>
+                           </div>
+                         ) : (
+                           <div className="flex items-center space-x-1">
+                             <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                             <span className="hidden sm:inline text-xs font-medium">ADICIONAR</span>
+                           </div>
+                         )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Guests */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                <Users className="w-5 h-5 mr-2" />
-                Convidados ({guests.length})
-              </h2>
+          {/* Sidebar - Convidados */}
+          <div className="lg:col-span-1">
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-xl">
+              <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                <Users className="w-5 h-5 mr-2 text-pink-400" />
+                Na Festa ({guests.length})
+              </h3>
               
-              <div className="space-y-2 max-h-64 overflow-y-auto">
+              <div className="space-y-3 max-h-64 overflow-y-auto">
                 {guests.length === 0 ? (
-                  <div className="text-center py-4 text-gray-400">
-                    <User className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Nenhum convidado ainda</p>
+                  <div className="text-center py-8 text-pink-300">
+                    <User className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">Aguardando mais pessoas...</p>
                   </div>
                 ) : (
                   guests.map((guest) => (
-                    <div key={guest.id} className="flex items-center space-x-3 bg-white/5 rounded-lg p-3">
-                      <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-white" />
+                    <div key={guest.id} className="flex items-center space-x-3 bg-white/5 rounded-xl p-3 border border-white/10">
+                      <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
+                        <User className="w-5 h-5 text-white" />
                       </div>
-                      <div className="flex-1">
-                        <p className="text-white font-medium">{guest.name}</p>
-                        <p className="text-gray-400 text-xs">
-                          Entrou {new Date(guest.created_at).toLocaleTimeString()}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium truncate">{guest.name}</p>
+                        <p className="text-pink-300 text-xs">
+                          {new Date(guest.created_at).toLocaleTimeString()}
                         </p>
                       </div>
                     </div>

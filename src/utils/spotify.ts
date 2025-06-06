@@ -330,12 +330,60 @@ export const searchTracksWithHostCredentials = async (
 // Adicionar música à fila do Spotify do host
 export const addToHostQueue = async (trackUri: string, partyCode: string): Promise<void> => {
   try {
-    await makeSpotifyRequest(
-      `/me/player/queue?uri=${encodeURIComponent(trackUri)}`,
-      partyCode,
-      { method: 'POST' }
-    );
-    console.log('✅ Música adicionada à fila do host');
+    const credentials = await getHostCredentials(partyCode);
+    if (!credentials) {
+      throw new Error('Credenciais do host não encontradas');
+    }
+
+    let { hostToken } = credentials;
+
+    // Verificar se precisa renovar o token
+    if (isTokenExpiringSoon(credentials.tokenExpiresAt)) {
+      console.log('🔄 Token expirando, renovando...');
+      const newToken = await refreshHostToken(partyCode, credentials.hostRefreshToken);
+      if (newToken) {
+        hostToken = newToken;
+      }
+    }
+
+    const response = await fetch(`${SPOTIFY_API_BASE}/me/player/queue?uri=${encodeURIComponent(trackUri)}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${hostToken}`,
+      },
+    });
+
+    // A API do Spotify retorna 204 (No Content) para sucesso na fila
+    if (response.status === 204) {
+      console.log('✅ Música adicionada à fila do host');
+      return;
+    }
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Token inválido, tentar renovar
+        console.log('🔄 Token inválido, tentando renovar...');
+        const newToken = await refreshHostToken(partyCode, credentials.hostRefreshToken);
+        if (newToken) {
+          // Tentar novamente com o novo token
+          const retryResponse = await fetch(`${SPOTIFY_API_BASE}/me/player/queue?uri=${encodeURIComponent(trackUri)}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${newToken}`,
+            },
+          });
+          
+          if (retryResponse.status === 204) {
+            console.log('✅ Música adicionada à fila do host (após renovar token)');
+            return;
+          }
+        }
+      }
+      
+      const errorText = await response.text();
+      console.error('Erro da API Spotify:', response.status, errorText);
+      throw new Error(`Erro ao adicionar à fila: ${response.status}`);
+    }
   } catch (error) {
     console.error('Erro ao adicionar à fila:', error);
     throw error;
@@ -409,32 +457,7 @@ export const getCurrentlyPlaying = async (partyCode: string): Promise<any> => {
   }
 };
 
-// Obter fila real do Spotify
-export const getSpotifyQueue = async (partyCode: string): Promise<any[]> => {
-  try {
-    const data = await makeSpotifyRequest('/me/player/queue', partyCode);
-    
-    if (!data || !data.queue) {
-      return [];
-    }
 
-    // Formatar fila do Spotify
-    return data.queue.map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      artist: item.artists?.map((artist: any) => artist.name).join(', ') || 'Artista desconhecido',
-      album: item.album?.name || 'Álbum desconhecido',
-      duration_ms: item.duration_ms,
-      image_url: item.album?.images[0]?.url || null,
-      external_url: item.external_urls?.spotify,
-      type: item.type, // 'track' ou 'episode'
-      uri: item.uri
-    }));
-  } catch (error) {
-    console.error('Erro ao obter fila do Spotify:', error);
-    return [];
-  }
-};
 
 // Utilitário para formatar duração
 export const formatDuration = (ms: number): string => {

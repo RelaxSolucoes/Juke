@@ -16,13 +16,14 @@ import {
   Smartphone,
   Check,
   LogOut,
-  RefreshCw
+  Sparkles,
+  Zap,
+  Heart
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useParty } from '../contexts/PartyContext';
 import { formatDuration } from '../utils/spotify';
 import { NowPlaying } from './NowPlaying';
-import { SpotifyQueue } from './SpotifyQueue';
 
 export const HostDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -41,7 +42,6 @@ export const HostDashboard: React.FC = () => {
     removeTrackFromQueue,
     leaveParty,
     searchTracks,
-    getCurrentPlaybackState
   } = useParty();
 
   const [showCreateParty, setShowCreateParty] = useState(!currentParty);
@@ -50,28 +50,29 @@ export const HostDashboard: React.FC = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [addedTracks, setAddedTracks] = useState<Set<string>>(new Set());
 
-  // Monitorar estado de reprodução
+  // Busca AJAX em tempo real
   useEffect(() => {
-    if (!currentParty) return;
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
 
-    const checkPlaybackState = async () => {
+    const timeoutId = setTimeout(async () => {
+      setSearching(true);
       try {
-        await getCurrentPlaybackState();
+        const results = await searchTracks(searchQuery);
+        setSearchResults(results);
       } catch (error) {
-        // Ignorar erros silenciosamente
+        console.error('Erro na busca:', error);
+      } finally {
+        setSearching(false);
       }
-    };
+    }, 500); // Debounce de 500ms
 
-    // Verificar estado inicial
-    checkPlaybackState();
-
-    // Verificar a cada 10 segundos
-    const interval = setInterval(checkPlaybackState, 10000);
-
-    return () => clearInterval(interval);
-  }, [currentParty, getCurrentPlaybackState]);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchTracks]);
 
   const handleCreateParty = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,73 +86,79 @@ export const HostDashboard: React.FC = () => {
     }
   };
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-
-    setSearching(true);
-    try {
-      const results = await searchTracks(searchQuery);
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Erro na busca:', error);
-    } finally {
-      setSearching(false);
-    }
-  };
-
   const copyPartyCode = async () => {
     if (currentParty) {
       await navigator.clipboard.writeText(currentParty.code);
       setCodeCopied(true);
-      setCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    }
+  };
+
+  const handleAddToQueue = async (track: any) => {
+    // Mostrar feedback imediato
+    setAddedTracks(prev => new Set([...prev, track.id]));
+    
+    try {
+      // Adicionar direto ao Spotify (sem Supabase por enquanto)
+      await addTrackToQueue(track, user?.name);
+      
+      console.log('✅ Música adicionada com sucesso:', track.name);
+      
+      // Manter feedback por 3 segundos
       setTimeout(() => {
-        setCodeCopied(false);
-        setCopied(false);
-      }, 2000);
+        setAddedTracks(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(track.id);
+          return newSet;
+        });
+      }, 3000);
+    } catch (error) {
+      console.error('Erro ao adicionar música:', error);
+      
+      // Remover feedback em caso de erro
+      setAddedTracks(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(track.id);
+        return newSet;
+      });
+      
+      // Mostrar erro visual (opcional)
+      alert('Erro ao adicionar música. Tente novamente.');
     }
-  };
-
-  const handlePlayPause = () => {
-    if (isPlaying) {
-      pausePlayback();
-    } else {
-      resumePlayback();
-    }
-  };
-
-  const handleAddToQueue = (track: any) => {
-    addTrackToQueue(track, user?.name);
   };
 
   const handleLeaveParty = () => {
     leaveParty();
   };
 
-  const refreshNowPlaying = async () => {
-    await getCurrentPlaybackState();
-  };
-
   if (showCreateParty) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-spotify-900 via-green-900 to-emerald-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
         <div className="max-w-md w-full">
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl animate-slide-up">
-            <h2 className="text-2xl font-bold text-white mb-6 text-center">
-              Criar Nova Festa
-            </h2>
+          <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20 shadow-2xl animate-slide-up">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Music className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-white mb-2">
+                Criar Nova Festa
+              </h2>
+              <p className="text-purple-200">
+                Comece sua festa musical agora!
+              </p>
+            </div>
             
-            <form onSubmit={handleCreateParty} className="space-y-4">
+            <form onSubmit={handleCreateParty} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-purple-200 mb-2">
                   Nome da festa
                 </label>
                 <input
                   type="text"
                   value={partyName}
                   onChange={(e) => setPartyName(e.target.value)}
-                  className="w-full bg-white/20 border border-white/30 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-spotify-500 focus:border-transparent"
-                  placeholder="Ex: Festa de Sábado"
+                  className="w-full bg-white/20 border border-white/30 rounded-xl px-4 py-3 text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="Ex: Festa de Sábado 🎉"
                   maxLength={100}
                 />
               </div>
@@ -160,15 +167,15 @@ export const HostDashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={signOut}
-                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                  className="flex-1 bg-gray-600/50 hover:bg-gray-600/70 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-spotify-600 hover:bg-spotify-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105"
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg"
                 >
-                  Criar Festa
+                  Criar Festa ✨
                 </button>
               </div>
             </form>
@@ -179,201 +186,208 @@ export const HostDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-spotify-900 via-green-900 to-emerald-900">
-      {/* Header */}
-      <div className="bg-black/30 backdrop-blur-sm border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* Header Premium */}
+      <div className="bg-black/30 backdrop-blur-xl border-b border-white/10">
+        <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Music className="w-8 h-8 text-spotify-400" />
-                <div>
-                  <h1 className="text-xl font-bold text-white">{currentParty?.name}</h1>
-                  <p className="text-sm text-gray-300">Host: {user?.name}</p>
-                </div>
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                <Music className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-white">{currentParty?.name}</h1>
+                <p className="text-purple-200">Host: {user?.name} • {guests.length} convidados</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* Sistema Simplificado Status */}
-              <div className="flex items-center space-x-2 bg-blue-600/20 text-blue-400 px-3 py-2 rounded-lg">
-                <Smartphone className="w-4 h-4" />
-                <span className="text-sm">Sistema Simplificado</span>
+              {/* Código da Festa */}
+              <div className="bg-white/10 rounded-xl px-4 py-2 border border-white/20">
+                <div className="flex items-center space-x-2">
+                  <span className="text-purple-200 text-sm">Código:</span>
+                  <code className="text-white font-mono text-lg">{currentParty?.code}</code>
+                  <button
+                    onClick={copyPartyCode}
+                    className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+                    title="Copiar código"
+                  >
+                    {codeCopied ? (
+                      <Check className="w-4 h-4 text-green-400" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-purple-300" />
+                    )}
+                  </button>
+                </div>
               </div>
 
-              {/* Party Code */}
-              <div className="flex items-center space-x-2 bg-white/10 px-3 py-2 rounded-lg">
-                <span className="text-gray-300 text-sm">Código:</span>
-                <code className="text-white font-mono text-lg">{currentParty?.code}</code>
-                <button
-                  onClick={copyPartyCode}
-                  className="text-gray-400 hover:text-white transition-colors"
-                  title="Copiar código"
-                >
-                  {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-                </button>
-              </div>
-              
               <button
                 onClick={handleLeaveParty}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                className="bg-red-500/20 hover:bg-red-500/30 text-red-300 px-4 py-2 rounded-xl transition-all flex items-center space-x-2 border border-red-500/30"
               >
-                Encerrar Festa
+                <LogOut className="w-4 h-4" />
+                <span>Sair</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Now Playing - Integrado na área principal */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                <Play className="w-5 h-5 mr-2" />
-                Tocando Agora
-              </h2>
-              <NowPlaying />
-            </div>
-
-            {/* Controles de Reprodução */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                <Music className="w-5 h-5 mr-2" />
-                Controles de Reprodução
-              </h2>
-              
-              <div className="flex items-center justify-center space-x-4">
-                <button
-                  onClick={skipToPrevious}
-                  className="bg-white/20 hover:bg-white/30 text-white p-3 rounded-full transition-colors"
-                  title="Música anterior"
-                >
-                  <SkipBack className="w-5 h-5" />
-                </button>
-                
-                <button
-                  onClick={handlePlayPause}
-                  className="bg-spotify-600 hover:bg-spotify-700 text-white p-4 rounded-full transition-colors"
-                  title={isPlaying ? 'Pausar' : 'Reproduzir'}
-                >
-                  {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
-                </button>
-                
-                <button
-                  onClick={skipToNext}
-                  className="bg-white/20 hover:bg-white/30 text-white p-3 rounded-full transition-colors"
-                  title="Próxima música"
-                >
-                  <SkipForward className="w-5 h-5" />
-                </button>
-
-                <button
-                  onClick={refreshNowPlaying}
-                  className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 p-3 rounded-full transition-colors ml-4"
-                  title="Atualizar estado"
-                >
-                  <RefreshCw className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Search Section */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                <Search className="w-5 h-5 mr-2" />
-                Buscar e Adicionar Músicas
-              </h2>
-              
-              <form onSubmit={handleSearch} className="mb-4">
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-1 bg-white/20 border border-white/30 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-spotify-500"
-                    placeholder="Buscar por música ou artista..."
-                  />
-                  <button
-                    type="submit"
-                    disabled={searching}
-                    className="bg-spotify-600 hover:bg-spotify-700 text-white px-6 py-2 rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    {searching ? 'Buscando...' : 'Buscar'}
-                  </button>
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Busca Premium - Área Principal */}
+          <div className="lg:col-span-3">
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20 shadow-2xl">
+              {/* Header da Busca */}
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                  <Search className="w-10 h-10 text-white" />
                 </div>
-              </form>
-
-              {/* Search Results */}
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {searchResults.map((track) => (
-                  <div key={track.id} className="flex items-center space-x-3 bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-colors">
-                    <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
-                      {track.album.images[0] ? (
-                        <img 
-                          src={track.album.images[0].url} 
-                          alt={track.album.name}
-                          className="w-full h-full rounded-lg object-cover"
-                        />
-                      ) : (
-                        <Music className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-white font-medium">{track.name}</h4>
-                      <p className="text-gray-300 text-sm">{track.artists[0].name}</p>
-                      <p className="text-gray-400 text-xs">{formatDuration(track.duration_ms)}</p>
-                    </div>
-                    <button
-                      onClick={() => handleAddToQueue(track)}
-                      className="bg-spotify-600 hover:bg-spotify-700 text-white p-2 rounded-lg transition-colors"
-                      title="Adicionar à fila"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+                <h2 className="text-3xl font-bold text-white mb-2 flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 mr-2 text-yellow-400" />
+                  Busca Musical Premium
+                  <Sparkles className="w-6 h-6 ml-2 text-yellow-400" />
+                </h2>
+                <p className="text-purple-200">
+                  Digite e veja a mágica acontecer em tempo real ✨
+                </p>
               </div>
-            </div>
 
-            {/* Queue - Substituída pela fila real */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                <Music className="w-5 h-5 mr-2" />
-                Fila Real do Spotify
-              </h2>
-              
-              <SpotifyQueue />
+              {/* Campo de Busca Premium */}
+              <div className="relative mb-8">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Search className={`w-6 h-6 transition-colors ${searching ? 'text-purple-400 animate-spin' : 'text-purple-300'}`} />
+                </div>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-white/20 border-2 border-white/30 rounded-2xl pl-12 pr-4 py-4 text-white text-lg placeholder-purple-300 focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:border-purple-400 transition-all duration-300"
+                  placeholder="🎵 Digite o nome da música ou artista..."
+                />
+                {searching && (
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
+                    <div className="w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </div>
+
+              {/* Resultados da Busca */}
+              <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
+                {searchResults.length === 0 && searchQuery && !searching && (
+                  <div className="text-center py-12 text-purple-300">
+                    <Music className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-xl">Nenhum resultado encontrado</p>
+                    <p className="text-sm">Tente buscar por outro termo</p>
+                  </div>
+                )}
+
+                {searchResults.length === 0 && !searchQuery && (
+                  <div className="text-center py-12 text-purple-300">
+                    <Zap className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-xl">Comece digitando para buscar</p>
+                    <p className="text-sm">A busca acontece automaticamente</p>
+                  </div>
+                )}
+
+                {searchResults.map((track, index) => {
+                  const isAdded = addedTracks.has(track.id);
+                  return (
+                    <div 
+                      key={track.id} 
+                      className={`group flex items-center space-x-3 bg-white/5 hover:bg-white/10 rounded-2xl p-3 transition-all duration-300 transform hover:scale-[1.01] border border-white/10 hover:border-white/20 ${isAdded ? 'bg-green-500/20 border-green-400/50' : ''}`}
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      {/* Capa do Álbum - Menor no mobile */}
+                      <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden flex-shrink-0">
+                        {track.album.images[0] ? (
+                          <img 
+                            src={track.album.images[0].url} 
+                            alt={track.album.name}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+                            <Music className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                          </div>
+                        )}
+                        {isAdded && (
+                          <div className="absolute inset-0 bg-green-500/80 flex items-center justify-center">
+                            <Check className="w-6 h-6 sm:w-8 sm:h-8 text-white animate-bounce" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Informações da Música - Prioridade no mobile */}
+                      <div className="flex-1 min-w-0 pr-2">
+                        <h4 className="text-white font-semibold text-base sm:text-lg leading-tight group-hover:text-purple-200 transition-colors">
+                          {track.name}
+                        </h4>
+                        <p className="text-purple-300 text-sm leading-tight truncate">
+                          {track.artists[0].name}
+                        </p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <Clock className="w-3 h-3 text-purple-400 flex-shrink-0" />
+                          <span className="text-purple-400 text-xs">
+                            {formatDuration(track.duration_ms)}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Botão de Adicionar - Responsivo */}
+                      <button
+                        onClick={() => handleAddToQueue(track)}
+                        disabled={isAdded}
+                        className={`p-2 sm:p-3 rounded-xl transition-all duration-300 transform hover:scale-110 flex-shrink-0 ${
+                          isAdded 
+                            ? 'bg-green-500 text-white cursor-not-allowed' 
+                            : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-purple-500/25'
+                        }`}
+                        title={isAdded ? 'Adicionada!' : 'Adicionar à fila'}
+                      >
+                        {isAdded ? (
+                          <div className="flex items-center space-x-1">
+                            <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <span className="hidden sm:inline text-xs font-medium">ADICIONADA</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-1">
+                            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <span className="hidden sm:inline text-xs font-medium">ADICIONAR</span>
+                          </div>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Guests */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                <Users className="w-5 h-5 mr-2" />
+          {/* Sidebar - Convidados */}
+          <div className="lg:col-span-1">
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-xl">
+              <h3 className="text-xl font-bold text-white mb-4 flex items-center">
+                <Users className="w-5 h-5 mr-2 text-purple-400" />
                 Convidados ({guests.length})
-              </h2>
+              </h3>
               
-              <div className="space-y-2 max-h-64 overflow-y-auto">
+              <div className="space-y-3 max-h-64 overflow-y-auto">
                 {guests.length === 0 ? (
-                  <div className="text-center py-4 text-gray-400">
-                    <User className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Nenhum convidado ainda</p>
+                  <div className="text-center py-8 text-purple-300">
+                    <User className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">Aguardando convidados...</p>
                   </div>
                 ) : (
                   guests.map((guest) => (
-                    <div key={guest.id} className="flex items-center space-x-3 bg-white/5 rounded-lg p-3">
-                      <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-white" />
+                    <div key={guest.id} className="flex items-center space-x-3 bg-white/5 rounded-xl p-3 border border-white/10">
+                      <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                        <User className="w-5 h-5 text-white" />
                       </div>
-                      <div className="flex-1">
-                        <p className="text-white font-medium">{guest.name}</p>
-                        <p className="text-gray-400 text-xs">
-                          Entrou {new Date(guest.created_at).toLocaleTimeString()}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium truncate">{guest.name}</p>
+                        <p className="text-purple-300 text-xs">
+                          {new Date(guest.created_at).toLocaleTimeString()}
                         </p>
                       </div>
                     </div>
@@ -384,6 +398,8 @@ export const HostDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+
     </div>
   );
 };

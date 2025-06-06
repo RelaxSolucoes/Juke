@@ -9,7 +9,6 @@ import {
   saveHostCredentials,
   generatePartyCode,
   getCurrentlyPlaying,
-  getSpotifyQueue,
 } from '../utils/spotify';
 import {
   createPartyInDB,
@@ -22,11 +21,11 @@ import {
   deactivateParty,
   subscribeToPartyUpdates
 } from '../utils/supabase';
+import { supabase } from '../utils/supabase';
 
 interface PartyContextType {
   currentParty: Party | null;
   queue: Track[];
-  spotifyQueue: any[];
   guests: Guest[];
   isPlaying: boolean;
   currentTrack: Track | null;
@@ -42,7 +41,6 @@ interface PartyContextType {
   leaveParty: () => void;
   searchTracks: (query: string) => Promise<any[]>;
   getCurrentPlaybackState: () => Promise<void>;
-  refreshSpotifyQueue: () => Promise<void>;
 }
 
 const PartyContext = createContext<PartyContextType | undefined>(undefined);
@@ -63,11 +61,11 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
   const { user, isHost } = useAuth();
   const [currentParty, setCurrentParty] = useLocalStorage<Party | null>('current-party', null);
   const [queue, setQueue] = useState<Track[]>([]);
-  const [spotifyQueue, setSpotifyQueue] = useState<any[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [nowPlaying, setNowPlaying] = useState<any | null>(null);
+  const [lastPlayingTrackId, setLastPlayingTrackId] = useState<string | null>(null);
   const [realtimeSubscription, setRealtimeSubscription] = useState<any>(null);
 
   // Carregar dados da festa do banco
@@ -131,98 +129,11 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     }
   }, [currentParty?.id]);
 
-  // Monitorar estado de reprodução do Spotify (apenas para hosts)
-  useEffect(() => {
-    if (!isHost || !currentParty) return;
-
-    const checkPlaybackState = async () => {
-      try {
-        const state = await hostPlaybackControls.getCurrentState(currentParty.code);
-        if (state && state.item) {
-          setIsPlaying(!state.is_paused);
-          
-          const track: Track = {
-            id: state.item.id,
-            spotify_id: state.item.id,
-            name: state.item.name,
-            artist: state.item.artists[0]?.name || 'Artista Desconhecido',
-            album: state.item.album?.name || 'Álbum Desconhecido',
-            duration_ms: state.item.duration_ms,
-            image_url: state.item.album?.images[0]?.url,
-            added_by: currentParty.host_id,
-            added_by_name: currentParty.host?.name || 'Host',
-            party_id: currentParty.id,
-            created_at: new Date().toISOString(),
-          };
-          
-          setCurrentTrack(track);
-        }
-      } catch (error) {
-        // Ignorar erros silenciosamente (pode não ter dispositivo ativo)
-      }
-    };
-
-    // Verificar estado inicial
-    checkPlaybackState();
-
-    // Verificar a cada 5 segundos
-    const interval = setInterval(checkPlaybackState, 5000);
-
-    return () => clearInterval(interval);
-  }, [isHost, currentParty?.code]);
-
-  // Monitorar música tocando agora
-  useEffect(() => {
-    if (!currentParty) return;
-
-    const checkNowPlaying = async () => {
-      try {
-        const playing = await getCurrentlyPlaying(currentParty.code);
-        setNowPlaying(playing);
-        
-        if (playing) {
-          setIsPlaying(playing.is_playing);
-        }
-      } catch (error) {
-        console.error('Erro ao verificar música tocando:', error);
-      }
-    };
-
-    // Verificar imediatamente
-    checkNowPlaying();
-
-    // Verificar a cada 5 segundos
-    const interval = setInterval(checkNowPlaying, 5000);
-
-    return () => clearInterval(interval);
-  }, [currentParty]);
-
-  // Função para atualizar fila real do Spotify
-  const refreshSpotifyQueue = async () => {
-    if (!currentParty) return;
-    
-    try {
-      const realQueue = await getSpotifyQueue(currentParty.code);
-      setSpotifyQueue(realQueue);
-    } catch (error) {
-      console.error('Erro ao atualizar fila do Spotify:', error);
-    }
-  };
-
-  // Função para obter estado atual de reprodução
+  // Função para obter estado atual de reprodução - DESABILITADA PARA MVP
   const getCurrentPlaybackState = async () => {
-    if (!currentParty) return;
-
-    try {
-      const playingData = await getCurrentlyPlaying(currentParty.code);
-      setNowPlaying(playingData);
-      setIsPlaying(playingData?.is_playing || false);
-      
-      // Também atualizar a fila real quando verificar o estado
-      await refreshSpotifyQueue();
-    } catch (error) {
-      console.error('Erro ao obter estado de reprodução:', error);
-    }
+    // DESABILITADA - causando loops infinitos
+    // Implementar depois quando tivermos mais tempo
+    console.log('Função desabilitada para MVP');
   };
 
   const createParty = async (name: string): Promise<string> => {
@@ -324,34 +235,15 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
   const addTrackToQueue = async (track: any, guestName?: string): Promise<void> => {
     if (!currentParty) return;
 
-    // Determinar quem está adicionando a música
-    const addedByName = guestName || user?.name || 'Convidado';
-    const addedById = user?.id || 'guest';
-
-    const trackData = {
-      spotify_id: track.id,
-      name: track.name,
-      artist: track.artists[0].name,
-      album: track.album.name,
-      duration_ms: track.duration_ms,
-      image_url: track.album.images[0]?.url,
-      preview_url: track.preview_url,
-      added_by: addedById,
-      added_by_name: addedByName,
-      party_id: currentParty.id,
-    };
-
     try {
-      // Adicionar ao banco de dados
-      await addTrackToQueueDB(trackData);
+      // Adicionar à fila do Spotify do host (MVP simplificado)
+      await addToHostQueue(track.uri, currentParty.code);
       
-      // Adicionar à fila do Spotify do host
-      await addToHostQueue(`spotify:track:${track.id}`, currentParty.code);
-      
-      console.log(`✅ Música "${track.name}" adicionada por ${addedByName}`);
+      console.log('✅ Música adicionada ao Spotify:', track.name);
+      // Não salvar no Supabase por enquanto - MVP focado apenas no Spotify
     } catch (error) {
-      console.error('Erro ao adicionar música à fila:', error);
-      throw new Error('Erro ao adicionar música à fila');
+      console.error('Erro ao adicionar música:', error);
+      throw error;
     }
   };
 
@@ -434,21 +326,9 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     localStorage.removeItem('current-party');
   };
 
-  // Monitoramento automático
-  useEffect(() => {
-    if (!currentParty) return;
-
-    const interval = setInterval(() => {
-      getCurrentPlaybackState();
-    }, 5000); // A cada 5 segundos
-
-    return () => clearInterval(interval);
-  }, [currentParty]);
-
   const value: PartyContextType = {
     currentParty,
     queue,
-    spotifyQueue,
     guests,
     isPlaying,
     currentTrack,
@@ -464,7 +344,6 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     leaveParty,
     searchTracks,
     getCurrentPlaybackState,
-    refreshSpotifyQueue,
   };
 
   return (
