@@ -5,6 +5,7 @@ import {
   Play, 
   Pause, 
   SkipForward, 
+  SkipBack, 
   Volume2, 
   Copy, 
   Plus,
@@ -12,11 +13,15 @@ import {
   Search,
   Clock,
   User,
-  Smartphone
+  Smartphone,
+  Check,
+  LogOut,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useParty } from '../contexts/PartyContext';
 import { formatDuration } from '../utils/spotify';
+import { NowPlaying } from './NowPlaying';
 
 export const HostDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -44,6 +49,8 @@ export const HostDashboard: React.FC = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   // Monitorar estado de reprodução
   useEffect(() => {
     if (!currentParty) return;
@@ -96,7 +103,11 @@ export const HostDashboard: React.FC = () => {
     if (currentParty) {
       await navigator.clipboard.writeText(currentParty.code);
       setCodeCopied(true);
-      setTimeout(() => setCodeCopied(false), 2000);
+      setCopied(true);
+      setTimeout(() => {
+        setCodeCopied(false);
+        setCopied(false);
+      }, 2000);
     }
   };
 
@@ -110,6 +121,14 @@ export const HostDashboard: React.FC = () => {
 
   const handleAddToQueue = (track: any) => {
     addTrackToQueue(track, user?.name);
+  };
+
+  const handleLeaveParty = () => {
+    leaveParty();
+  };
+
+  const refreshNowPlaying = async () => {
+    await getCurrentPlaybackState();
   };
 
   if (showCreateParty) {
@@ -191,12 +210,12 @@ export const HostDashboard: React.FC = () => {
                   className="bg-spotify-600 hover:bg-spotify-700 text-white p-2 rounded-lg transition-colors"
                   title="Copiar código"
                 >
-                  <Copy className="w-4 h-4" />
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
               
               <button
-                onClick={leaveParty}
+                onClick={handleLeaveParty}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 Sair
@@ -406,6 +425,51 @@ export const HostDashboard: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Now Playing - Nova seção */}
+      <NowPlaying />
+
+      {/* Controles de Reprodução */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <Play className="w-5 h-5" />
+          Controles de Reprodução
+        </h2>
+        
+        <div className="flex items-center gap-4">
+          <button
+            onClick={skipToPrevious}
+            className="p-3 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+            title="Música anterior"
+          >
+            <SkipBack className="w-5 h-5" />
+          </button>
+          
+          <button
+            onClick={handlePlayPause}
+            className="p-4 bg-green-500 hover:bg-green-600 text-white rounded-full transition-colors"
+            title={isPlaying ? 'Pausar' : 'Reproduzir'}
+          >
+            {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+          </button>
+          
+          <button
+            onClick={skipToNext}
+            className="p-3 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+            title="Próxima música"
+          >
+            <SkipForward className="w-5 h-5" />
+          </button>
+
+          <button
+            onClick={refreshNowPlaying}
+            className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-full transition-colors ml-4"
+            title="Atualizar estado"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </button>
         </div>
       </div>
     </div>

@@ -378,6 +378,46 @@ export const getCurrentUser = async (accessToken: string) => {
   return response.json();
 };
 
+// Obter música tocando atualmente
+export const getCurrentlyPlaying = async (partyCode: string): Promise<any> => {
+  try {
+    const data = await makeSpotifyRequest('/me/player/currently-playing', partyCode);
+    
+    // Se não há nada tocando, retornar null
+    if (!data || !data.item) {
+      return null;
+    }
+
+    // Formatar dados da música atual
+    return {
+      track: {
+        id: data.item.id,
+        name: data.item.name,
+        artist: data.item.artists.map((artist: any) => artist.name).join(', '),
+        album: data.item.album.name,
+        image_url: data.item.album.images[0]?.url,
+        duration_ms: data.item.duration_ms,
+        external_url: data.item.external_urls.spotify,
+      },
+      is_playing: data.is_playing,
+      progress_ms: data.progress_ms,
+      device: {
+        name: data.device?.name,
+        type: data.device?.type,
+        volume_percent: data.device?.volume_percent,
+      },
+      context: data.context ? {
+        type: data.context.type,
+        uri: data.context.uri,
+      } : null,
+      timestamp: data.timestamp,
+    };
+  } catch (error) {
+    console.error('Erro ao obter música tocando:', error);
+    return null;
+  }
+};
+
 // Utilitário para formatar duração
 export const formatDuration = (ms: number): string => {
   const minutes = Math.floor(ms / 60000);

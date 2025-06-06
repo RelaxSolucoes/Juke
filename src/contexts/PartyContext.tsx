@@ -7,7 +7,8 @@ import {
   addToHostQueue,
   hostPlaybackControls,
   saveHostCredentials,
-  generatePartyCode
+  generatePartyCode,
+  getCurrentlyPlaying
 } from '../utils/spotify';
 import {
   createPartyInDB,
@@ -27,6 +28,7 @@ interface PartyContextType {
   guests: Guest[];
   isPlaying: boolean;
   currentTrack: Track | null;
+  nowPlaying: any | null;
   createParty: (name: string) => Promise<string>;
   joinParty: (code: string, guestName: string) => Promise<boolean>;
   addTrackToQueue: (track: any, guestName?: string) => Promise<void>;
@@ -38,6 +40,7 @@ interface PartyContextType {
   leaveParty: () => void;
   searchTracks: (query: string) => Promise<any[]>;
   getCurrentPlaybackState: () => Promise<any>;
+  refreshNowPlaying: () => Promise<void>;
 }
 
 const PartyContext = createContext<PartyContextType | undefined>(undefined);
@@ -61,6 +64,7 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const [nowPlaying, setNowPlaying] = useState<any | null>(null);
   const [realtimeSubscription, setRealtimeSubscription] = useState<any>(null);
 
   // Carregar dados da festa do banco
@@ -163,6 +167,32 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
 
     return () => clearInterval(interval);
   }, [isHost, currentParty?.code]);
+
+  // Monitorar música tocando agora
+  useEffect(() => {
+    if (!currentParty) return;
+
+    const checkNowPlaying = async () => {
+      try {
+        const playing = await getCurrentlyPlaying(currentParty.code);
+        setNowPlaying(playing);
+        
+        if (playing) {
+          setIsPlaying(playing.is_playing);
+        }
+      } catch (error) {
+        console.error('Erro ao verificar música tocando:', error);
+      }
+    };
+
+    // Verificar imediatamente
+    checkNowPlaying();
+
+    // Verificar a cada 5 segundos
+    const interval = setInterval(checkNowPlaying, 5000);
+
+    return () => clearInterval(interval);
+  }, [currentParty]);
 
   const createParty = async (name: string): Promise<string> => {
     if (!user) throw new Error('Usuário não autenticado');
@@ -384,12 +414,28 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     localStorage.removeItem('current-party');
   };
 
+  const refreshNowPlaying = async (): Promise<void> => {
+    if (!currentParty) return;
+
+    try {
+      const playing = await getCurrentlyPlaying(currentParty.code);
+      setNowPlaying(playing);
+      
+      if (playing) {
+        setIsPlaying(playing.is_playing);
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar música tocando:', error);
+    }
+  };
+
   const value: PartyContextType = {
     currentParty,
     queue,
     guests,
     isPlaying,
     currentTrack,
+    nowPlaying,
     createParty,
     joinParty,
     addTrackToQueue,
@@ -401,6 +447,7 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     leaveParty,
     searchTracks,
     getCurrentPlaybackState,
+    refreshNowPlaying,
   };
 
   return (

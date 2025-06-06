@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useParty } from '../contexts/PartyContext';
 import { formatDuration } from '../utils/spotify';
+import { NowPlaying } from './NowPlaying';
 
 export const GuestView: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -338,6 +339,9 @@ export const GuestView: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Now Playing - Nova seção */}
+        <NowPlaying />
       </div>
     </div>
   );
