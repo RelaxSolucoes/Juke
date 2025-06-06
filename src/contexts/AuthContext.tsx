@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const signInWithSpotify = async () => {
     setLoading(true);
     try {
-      const authUrl = getSpotifyAuthUrl();
+      const authUrl = await getSpotifyAuthUrl();
       window.location.href = authUrl;
     } catch (error) {
       console.error('Erro ao iniciar login com Spotify:', error);

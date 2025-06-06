@@ -30,13 +30,22 @@ export const generatePartyCode = (): string => {
   return result;
 };
 
-export const getSpotifyAuthUrl = (): string => {
+export const getSpotifyAuthUrl = async (): Promise<string> => {
+  // Gerar code verifier e challenge para PKCE
+  const codeVerifier = generateRandomString(128);
+  const codeChallenge = await generateCodeChallenge(codeVerifier);
+  
+  // Salvar code verifier no localStorage para usar depois
+  localStorage.setItem('spotify_code_verifier', codeVerifier);
+  
   const params = new URLSearchParams({
     client_id: spotifyConfig.clientId,
     response_type: 'code',
     redirect_uri: spotifyConfig.redirectUri,
     scope: spotifyConfig.scopes.join(' '),
-    state: generateRandomString(16)
+    state: generateRandomString(16),
+    code_challenge_method: 'S256',
+    code_challenge: codeChallenge
   });
 
   return `https://accounts.spotify.com/authorize?${params.toString()}`;
@@ -51,12 +60,30 @@ export const generateRandomString = (length: number): string => {
   return text;
 };
 
+// Função para gerar code challenge para PKCE
+const generateCodeChallenge = async (codeVerifier: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(codeVerifier);
+  const digest = await window.crypto.subtle.digest('SHA-256', data);
+  
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+};
+
 export const exchangeCodeForTokens = async (code: string): Promise<{
   access_token: string;
   refresh_token: string;
   expires_in: number;
 } | null> => {
   try {
+    // Recuperar code verifier do localStorage
+    const codeVerifier = localStorage.getItem('spotify_code_verifier');
+    if (!codeVerifier) {
+      throw new Error('Code verifier not found');
+    }
+
     const response = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
       headers: {
@@ -67,16 +94,23 @@ export const exchangeCodeForTokens = async (code: string): Promise<{
         code,
         redirect_uri: spotifyConfig.redirectUri,
         client_id: spotifyConfig.clientId,
+        code_verifier: codeVerifier,
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to exchange code for tokens');
+      const errorData = await response.text();
+      console.error('Spotify token exchange error:', errorData);
+      throw new Error(`Failed to exchange code for tokens: ${response.status}`);
     }
+
+    // Limpar code verifier após uso
+    localStorage.removeItem('spotify_code_verifier');
 
     return await response.json();
   } catch (error) {
-    console.error('Error exchanging code for tokens:', error);
+    console.error('Error exchanging code for tokens:', error instanceof Error ? error.message : error);
+    localStorage.removeItem('spotify_code_verifier'); // Limpar em caso de erro
     return null;
   }
 };
