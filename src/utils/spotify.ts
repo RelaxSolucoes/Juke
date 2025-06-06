@@ -395,26 +395,44 @@ export const getCurrentlyPlaying = async (partyCode: string): Promise<any> => {
         name: data.item.name,
         artist: data.item.artists.map((artist: any) => artist.name).join(', '),
         album: data.item.album.name,
-        image_url: data.item.album.images[0]?.url,
         duration_ms: data.item.duration_ms,
-        external_url: data.item.external_urls.spotify,
+        image_url: data.item.album.images[0]?.url || null,
+        external_url: data.item.external_urls.spotify
       },
-      is_playing: data.is_playing,
       progress_ms: data.progress_ms,
-      device: {
-        name: data.device?.name,
-        type: data.device?.type,
-        volume_percent: data.device?.volume_percent,
-      },
-      context: data.context ? {
-        type: data.context.type,
-        uri: data.context.uri,
-      } : null,
-      timestamp: data.timestamp,
+      is_playing: data.is_playing,
+      device: data.device
     };
   } catch (error) {
-    console.error('Erro ao obter música tocando:', error);
+    console.error('Erro ao obter música atual:', error);
     return null;
+  }
+};
+
+// Obter fila real do Spotify
+export const getSpotifyQueue = async (partyCode: string): Promise<any[]> => {
+  try {
+    const data = await makeSpotifyRequest('/me/player/queue', partyCode);
+    
+    if (!data || !data.queue) {
+      return [];
+    }
+
+    // Formatar fila do Spotify
+    return data.queue.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      artist: item.artists?.map((artist: any) => artist.name).join(', ') || 'Artista desconhecido',
+      album: item.album?.name || 'Álbum desconhecido',
+      duration_ms: item.duration_ms,
+      image_url: item.album?.images[0]?.url || null,
+      external_url: item.external_urls?.spotify,
+      type: item.type, // 'track' ou 'episode'
+      uri: item.uri
+    }));
+  } catch (error) {
+    console.error('Erro ao obter fila do Spotify:', error);
+    return [];
   }
 };
 

@@ -8,7 +8,8 @@ import {
   hostPlaybackControls,
   saveHostCredentials,
   generatePartyCode,
-  getCurrentlyPlaying
+  getCurrentlyPlaying,
+  getSpotifyQueue,
 } from '../utils/spotify';
 import {
   createPartyInDB,
@@ -25,6 +26,7 @@ import {
 interface PartyContextType {
   currentParty: Party | null;
   queue: Track[];
+  spotifyQueue: any[];
   guests: Guest[];
   isPlaying: boolean;
   currentTrack: Track | null;
@@ -39,8 +41,8 @@ interface PartyContextType {
   removeTrackFromQueue: (trackId: string) => Promise<void>;
   leaveParty: () => void;
   searchTracks: (query: string) => Promise<any[]>;
-  getCurrentPlaybackState: () => Promise<any>;
-  refreshNowPlaying: () => Promise<void>;
+  getCurrentPlaybackState: () => Promise<void>;
+  refreshSpotifyQueue: () => Promise<void>;
 }
 
 const PartyContext = createContext<PartyContextType | undefined>(undefined);
@@ -61,6 +63,7 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
   const { user, isHost } = useAuth();
   const [currentParty, setCurrentParty] = useLocalStorage<Party | null>('current-party', null);
   const [queue, setQueue] = useState<Track[]>([]);
+  const [spotifyQueue, setSpotifyQueue] = useState<any[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -193,6 +196,34 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
 
     return () => clearInterval(interval);
   }, [currentParty]);
+
+  // Função para atualizar fila real do Spotify
+  const refreshSpotifyQueue = async () => {
+    if (!currentParty) return;
+    
+    try {
+      const realQueue = await getSpotifyQueue(currentParty.code);
+      setSpotifyQueue(realQueue);
+    } catch (error) {
+      console.error('Erro ao atualizar fila do Spotify:', error);
+    }
+  };
+
+  // Função para obter estado atual de reprodução
+  const getCurrentPlaybackState = async () => {
+    if (!currentParty) return;
+
+    try {
+      const playingData = await getCurrentlyPlaying(currentParty.code);
+      setNowPlaying(playingData);
+      setIsPlaying(playingData?.is_playing || false);
+      
+      // Também atualizar a fila real quando verificar o estado
+      await refreshSpotifyQueue();
+    } catch (error) {
+      console.error('Erro ao obter estado de reprodução:', error);
+    }
+  };
 
   const createParty = async (name: string): Promise<string> => {
     if (!user) throw new Error('Usuário não autenticado');
@@ -370,17 +401,6 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     }
   };
 
-  const getCurrentPlaybackState = async (): Promise<any> => {
-    if (!currentParty) return null;
-
-    try {
-      return await hostPlaybackControls.getCurrentState(currentParty.code);
-    } catch (error) {
-      console.error('Erro ao obter estado de reprodução:', error);
-      return null;
-    }
-  };
-
   const removeTrackFromQueue = async (trackId: string): Promise<void> => {
     try {
       await removeTrackFromQueueDB(trackId);
@@ -414,24 +434,21 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     localStorage.removeItem('current-party');
   };
 
-  const refreshNowPlaying = async (): Promise<void> => {
+  // Monitoramento automático
+  useEffect(() => {
     if (!currentParty) return;
 
-    try {
-      const playing = await getCurrentlyPlaying(currentParty.code);
-      setNowPlaying(playing);
-      
-      if (playing) {
-        setIsPlaying(playing.is_playing);
-      }
-    } catch (error) {
-      console.error('Erro ao atualizar música tocando:', error);
-    }
-  };
+    const interval = setInterval(() => {
+      getCurrentPlaybackState();
+    }, 5000); // A cada 5 segundos
+
+    return () => clearInterval(interval);
+  }, [currentParty]);
 
   const value: PartyContextType = {
     currentParty,
     queue,
+    spotifyQueue,
     guests,
     isPlaying,
     currentTrack,
@@ -447,7 +464,7 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     leaveParty,
     searchTracks,
     getCurrentPlaybackState,
-    refreshNowPlaying,
+    refreshSpotifyQueue,
   };
 
   return (

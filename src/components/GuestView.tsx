@@ -14,6 +14,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useParty } from '../contexts/PartyContext';
 import { formatDuration } from '../utils/spotify';
 import { NowPlaying } from './NowPlaying';
+import { SpotifyQueue } from './SpotifyQueue';
 
 export const GuestView: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -184,46 +185,14 @@ export const GuestView: React.FC = () => {
               )}
             </div>
 
-            {/* Queue */}
+            {/* Queue - Substituída pela fila real */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center">
                 <Music className="w-5 h-5 mr-2" />
-                Fila de Reprodução ({queue.length})
+                Fila Real do Spotify
               </h2>
               
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {queue.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400">
-                    <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Nenhuma música na fila</p>
-                    <p className="text-sm">Busque e adicione músicas acima</p>
-                  </div>
-                ) : (
-                  queue.map((track, index) => (
-                    <div key={track.id} className="flex items-center space-x-3 bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-colors">
-                      <span className="text-gray-400 text-sm w-6">{index + 1}</span>
-                      <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
-                        {track.image_url ? (
-                          <img 
-                            src={track.image_url} 
-                            alt={track.album}
-                            className="w-full h-full rounded-lg object-cover"
-                          />
-                        ) : (
-                          <Music className="w-6 h-6 text-gray-400" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-white font-medium">{track.name}</h4>
-                        <p className="text-gray-300 text-sm">{track.artist}</p>
-                        <p className="text-gray-400 text-xs">
-                          Adicionada por {track.added_by_name} • {formatDuration(track.duration_ms)}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+              <SpotifyQueue />
             </div>
           </div>
 
