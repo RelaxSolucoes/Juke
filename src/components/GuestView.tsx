@@ -94,44 +94,13 @@ export const GuestView: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Current Track */}
+            {/* Now Playing - Posição correta */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center">
                 <Play className="w-5 h-5 mr-2" />
                 Tocando Agora
               </h2>
-              
-              {currentTrack ? (
-                <div className="flex items-center space-x-4">
-                  <div className="w-16 h-16 bg-gray-700 rounded-lg flex items-center justify-center">
-                    {currentTrack.image_url ? (
-                      <img 
-                        src={currentTrack.image_url} 
-                        alt={currentTrack.album}
-                        className="w-full h-full rounded-lg object-cover"
-                      />
-                    ) : (
-                      <Music className="w-8 h-8 text-gray-400" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-white font-semibold">{currentTrack.name}</h3>
-                    <p className="text-gray-300">{currentTrack.artist}</p>
-                    <p className="text-gray-400 text-sm">Adicionada por {currentTrack.added_by_name}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-purple-400 text-sm">
-                      {formatDuration(currentTrack.duration_ms)}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Nenhuma música tocando</p>
-                  <p className="text-sm">Aguarde o host iniciar a reprodução</p>
-                </div>
-              )}
+              <NowPlaying />
             </div>
 
             {/* Search */}
@@ -215,98 +184,52 @@ export const GuestView: React.FC = () => {
               )}
             </div>
 
-            {/* Queue Preview */}
+            {/* Queue */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center">
                 <Music className="w-5 h-5 mr-2" />
-                Próximas na Fila ({queue.length})
+                Fila de Reprodução ({queue.length})
               </h2>
               
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {queue.slice(0, 10).map((track, index) => (
-                  <div key={track.id} className="flex items-center space-x-3 bg-white/5 rounded-lg p-3">
-                    <span className="text-gray-400 font-mono text-sm w-8">{index + 1}</span>
-                    <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
-                      {track.image_url ? (
-                        <img 
-                          src={track.image_url} 
-                          alt={track.album}
-                          className="w-full h-full rounded-lg object-cover"
-                        />
-                      ) : (
-                        <Music className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-white font-medium">{track.name}</h4>
-                      <p className="text-gray-300 text-sm">{track.artist}</p>
-                      <p className="text-gray-400 text-xs">
-                        Por {track.added_by_name} • {formatDuration(track.duration_ms)}
-                      </p>
-                    </div>
-                    {track.added_by === user?.id && (
-                      <div className="bg-purple-600/20 text-purple-400 px-2 py-1 rounded text-xs">
-                        Sua música
-                      </div>
-                    )}
-                  </div>
-                ))}
-                
-                {queue.length === 0 && (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {queue.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
                     <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Fila vazia</p>
-                    <p className="text-sm">Seja o primeiro a adicionar uma música!</p>
+                    <p>Nenhuma música na fila</p>
+                    <p className="text-sm">Busque e adicione músicas acima</p>
                   </div>
+                ) : (
+                  queue.map((track, index) => (
+                    <div key={track.id} className="flex items-center space-x-3 bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-colors">
+                      <span className="text-gray-400 text-sm w-6">{index + 1}</span>
+                      <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
+                        {track.image_url ? (
+                          <img 
+                            src={track.image_url} 
+                            alt={track.album}
+                            className="w-full h-full rounded-lg object-cover"
+                          />
+                        ) : (
+                          <Music className="w-6 h-6 text-gray-400" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-white font-medium">{track.name}</h4>
+                        <p className="text-gray-300 text-sm">{track.artist}</p>
+                        <p className="text-gray-400 text-xs">
+                          Adicionada por {track.added_by_name} • {formatDuration(track.duration_ms)}
+                        </p>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
-
-              {queue.length > 10 && (
-                <div className="mt-4 text-center text-gray-400 text-sm">
-                  E mais {queue.length - 10} músicas na fila...
-                </div>
-              )}
             </div>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Party Info */}
-            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <h2 className="text-xl font-bold text-white mb-4">
-                Informações da Festa
-              </h2>
-              
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <Music className="w-5 h-5 text-purple-400" />
-                  <div>
-                    <p className="text-white font-medium">{currentParty?.name}</p>
-                    <p className="text-gray-400 text-sm">Nome da festa</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <User className="w-5 h-5 text-green-400" />
-                  <div>
-                    <p className="text-white font-medium">{currentParty?.host?.name}</p>
-                    <p className="text-gray-400 text-sm">Host da festa</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <Clock className="w-5 h-5 text-blue-400" />
-                  <div>
-                    <p className="text-white font-medium">
-                      {currentParty && new Date(currentParty.created_at).toLocaleString('pt-BR')}
-                    </p>
-                    <p className="text-gray-400 text-sm">Criada em</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Guests List */}
+            {/* Guests */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center">
                 <Users className="w-5 h-5 mr-2" />
@@ -314,34 +237,30 @@ export const GuestView: React.FC = () => {
               </h2>
               
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {guests.map((guest) => (
-                  <div key={guest.id} className="flex items-center space-x-3 bg-white/5 rounded-lg p-3">
-                    <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                      <User className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-white font-medium">{guest.name}</p>
-                      <p className="text-gray-400 text-xs">
-                        {new Date(guest.created_at).toLocaleTimeString('pt-BR', { 
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                    {guest.name === user?.name && (
-                      <div className="bg-purple-600/20 text-purple-400 px-2 py-1 rounded text-xs">
-                        Você
-                      </div>
-                    )}
+                {guests.length === 0 ? (
+                  <div className="text-center py-4 text-gray-400">
+                    <User className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Nenhum convidado ainda</p>
                   </div>
-                ))}
+                ) : (
+                  guests.map((guest) => (
+                    <div key={guest.id} className="flex items-center space-x-3 bg-white/5 rounded-lg p-3">
+                      <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-white font-medium">{guest.name}</p>
+                        <p className="text-gray-400 text-xs">
+                          Entrou {new Date(guest.created_at).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
         </div>
-
-        {/* Now Playing - Nova seção */}
-        <NowPlaying />
       </div>
     </div>
   );

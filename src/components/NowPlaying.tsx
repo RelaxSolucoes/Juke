@@ -8,10 +8,10 @@ export const NowPlaying: React.FC = () => {
 
   if (!nowPlaying) {
     return (
-      <div className="bg-gray-50 rounded-lg p-6 text-center">
-        <Music className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-        <p className="text-gray-500">Nenhuma música tocando no momento</p>
-        <p className="text-sm text-gray-400 mt-1">
+      <div className="text-center py-8 text-gray-400">
+        <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
+        <p>Nenhuma música tocando no momento</p>
+        <p className="text-sm">
           O host precisa iniciar a reprodução no Spotify
         </p>
       </div>
@@ -22,17 +22,17 @@ export const NowPlaying: React.FC = () => {
   const progressPercent = (progress_ms / track.duration_ms) * 100;
 
   return (
-    <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 border border-green-200">
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
+    <div className="space-y-4">
+      {/* Status */}
+      <div className="flex items-center gap-2">
         {isPlaying ? (
-          <Play className="w-5 h-5 text-green-600 fill-current" />
+          <Play className="w-5 h-5 text-green-400 fill-current" />
         ) : (
-          <Pause className="w-5 h-5 text-gray-500" />
+          <Pause className="w-5 h-5 text-gray-400" />
         )}
-        <h3 className="font-semibold text-gray-800">
-          {isPlaying ? 'Tocando Agora' : 'Pausado'}
-        </h3>
+        <span className="text-white font-medium">
+          {isPlaying ? 'Reproduzindo' : 'Pausado'}
+        </span>
       </div>
 
       {/* Música Info */}
@@ -43,10 +43,10 @@ export const NowPlaying: React.FC = () => {
             <img
               src={track.image_url}
               alt={`Capa de ${track.album}`}
-              className="w-20 h-20 rounded-lg shadow-md object-cover"
+              className="w-20 h-20 rounded-lg shadow-lg object-cover"
             />
           ) : (
-            <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
+            <div className="w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center">
               <Music className="w-8 h-8 text-gray-400" />
             </div>
           )}
@@ -54,18 +54,18 @@ export const NowPlaying: React.FC = () => {
 
         {/* Detalhes da Música */}
         <div className="flex-1 min-w-0">
-          <h4 className="font-bold text-lg text-gray-900 truncate">
+          <h3 className="font-bold text-lg text-white truncate">
             {track.name}
-          </h4>
-          <p className="text-gray-600 truncate">{track.artist}</p>
-          <p className="text-sm text-gray-500 truncate">{track.album}</p>
+          </h3>
+          <p className="text-gray-300 truncate">{track.artist}</p>
+          <p className="text-sm text-gray-400 truncate">{track.album}</p>
 
           {/* Link para Spotify */}
           <a
             href={track.external_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-sm text-green-600 hover:text-green-700 mt-2"
+            className="inline-flex items-center gap-1 text-sm text-green-400 hover:text-green-300 mt-2 transition-colors"
           >
             <ExternalLink className="w-4 h-4" />
             Abrir no Spotify
@@ -74,12 +74,12 @@ export const NowPlaying: React.FC = () => {
       </div>
 
       {/* Barra de Progresso */}
-      <div className="mt-4">
-        <div className="flex justify-between text-sm text-gray-500 mb-1">
+      <div className="space-y-2">
+        <div className="flex justify-between text-sm text-gray-400">
           <span>{formatDuration(progress_ms)}</span>
           <span>{formatDuration(track.duration_ms)}</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-gray-700 rounded-full h-2">
           <div
             className="bg-green-500 h-2 rounded-full transition-all duration-1000"
             style={{ width: `${progressPercent}%` }}
@@ -89,10 +89,10 @@ export const NowPlaying: React.FC = () => {
 
       {/* Informações do Dispositivo */}
       {device && device.name && (
-        <div className="mt-4 flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2 text-sm text-gray-400">
           <Volume2 className="w-4 h-4" />
           <span>
-            Tocando em: <strong>{device.name}</strong>
+            Tocando em: <span className="text-white">{device.name}</span>
             {device.type && ` (${device.type})`}
             {device.volume_percent !== null && ` • ${device.volume_percent}%`}
           </span>

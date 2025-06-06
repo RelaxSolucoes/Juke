@@ -201,16 +201,15 @@ export const HostDashboard: React.FC = () => {
               </div>
 
               {/* Party Code */}
-              <div className="flex items-center space-x-2">
-                <div className="bg-white/20 rounded-lg px-4 py-2">
-                  <span className="text-white font-mono text-lg">{currentParty?.code}</span>
-                </div>
+              <div className="flex items-center space-x-2 bg-white/10 px-3 py-2 rounded-lg">
+                <span className="text-gray-300 text-sm">Código:</span>
+                <code className="text-white font-mono text-lg">{currentParty?.code}</code>
                 <button
                   onClick={copyPartyCode}
-                  className="bg-spotify-600 hover:bg-spotify-700 text-white p-2 rounded-lg transition-colors"
+                  className="text-gray-400 hover:text-white transition-colors"
                   title="Copiar código"
                 >
-                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
               
@@ -218,79 +217,73 @@ export const HostDashboard: React.FC = () => {
                 onClick={handleLeaveParty}
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
-                Sair
+                Encerrar Festa
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {codeCopied && (
-        <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg animate-slide-up z-50">
-          Código copiado!
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Now Playing & Controls */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Now Playing */}
+            {/* Now Playing - Integrado na área principal */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center">
                 <Play className="w-5 h-5 mr-2" />
                 Tocando Agora
               </h2>
-              
-              {currentTrack ? (
-                <div className="flex items-center space-x-4">
-                  <div className="w-16 h-16 bg-gray-700 rounded-lg flex items-center justify-center">
-                    {currentTrack.image_url ? (
-                      <img 
-                        src={currentTrack.image_url} 
-                        alt={currentTrack.album}
-                        className="w-full h-full rounded-lg object-cover"
-                      />
-                    ) : (
-                      <Music className="w-8 h-8 text-gray-400" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-white font-semibold">{currentTrack.name}</h3>
-                    <p className="text-gray-300">{currentTrack.artist}</p>
-                    <p className="text-gray-400 text-sm">Adicionada por {currentTrack.added_by_name}</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={handlePlayPause}
-                      className="bg-spotify-600 hover:bg-spotify-700 text-white p-3 rounded-full transition-colors"
-                    >
-                      {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-                    </button>
-                    <button
-                      onClick={skipToNext}
-                      className="bg-spotify-600 hover:bg-spotify-700 text-white p-3 rounded-full transition-colors"
-                    >
-                      <SkipForward className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Nenhuma música tocando</p>
-                  <p className="text-sm">
-                    Adicione músicas à fila para começar
-                  </p>
-                </div>
-              )}
+              <NowPlaying />
             </div>
 
-            {/* Search */}
+            {/* Controles de Reprodução */}
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+              <h2 className="text-xl font-bold text-white mb-4 flex items-center">
+                <Music className="w-5 h-5 mr-2" />
+                Controles de Reprodução
+              </h2>
+              
+              <div className="flex items-center justify-center space-x-4">
+                <button
+                  onClick={skipToPrevious}
+                  className="bg-white/20 hover:bg-white/30 text-white p-3 rounded-full transition-colors"
+                  title="Música anterior"
+                >
+                  <SkipBack className="w-5 h-5" />
+                </button>
+                
+                <button
+                  onClick={handlePlayPause}
+                  className="bg-spotify-600 hover:bg-spotify-700 text-white p-4 rounded-full transition-colors"
+                  title={isPlaying ? 'Pausar' : 'Reproduzir'}
+                >
+                  {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+                </button>
+                
+                <button
+                  onClick={skipToNext}
+                  className="bg-white/20 hover:bg-white/30 text-white p-3 rounded-full transition-colors"
+                  title="Próxima música"
+                >
+                  <SkipForward className="w-5 h-5" />
+                </button>
+
+                <button
+                  onClick={refreshNowPlaying}
+                  className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 p-3 rounded-full transition-colors ml-4"
+                  title="Atualizar estado"
+                >
+                  <RefreshCw className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Search Section */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center">
                 <Search className="w-5 h-5 mr-2" />
-                Buscar Músicas
+                Buscar e Adicionar Músicas
               </h2>
               
               <form onSubmit={handleSearch} className="mb-4">
@@ -335,6 +328,7 @@ export const HostDashboard: React.FC = () => {
                     <button
                       onClick={() => handleAddToQueue(track)}
                       className="bg-spotify-600 hover:bg-spotify-700 text-white p-2 rounded-lg transition-colors"
+                      title="Adicionar à fila"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -350,126 +344,82 @@ export const HostDashboard: React.FC = () => {
                 Fila de Reprodução ({queue.length})
               </h2>
               
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {queue.length > 0 ? queue.map((track, index) => (
-                  <div key={track.id} className="flex items-center space-x-3 bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-colors">
-                    <span className="text-gray-400 font-mono text-sm w-8">{index + 1}</span>
-                    <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
-                      {track.image_url ? (
-                        <img 
-                          src={track.image_url} 
-                          alt={track.album}
-                          className="w-full h-full rounded-lg object-cover"
-                        />
-                      ) : (
-                        <Music className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-white font-medium">{track.name}</h4>
-                      <p className="text-gray-300 text-sm">{track.artist}</p>
-                      <p className="text-gray-400 text-xs">Por {track.added_by_name} • {formatDuration(track.duration_ms)}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {queue.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400">
+                    <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Nenhuma música na fila</p>
+                    <p className="text-sm">Busque e adicione músicas acima</p>
+                  </div>
+                ) : (
+                  queue.map((track, index) => (
+                    <div key={track.id} className="flex items-center space-x-3 bg-white/5 rounded-lg p-3 hover:bg-white/10 transition-colors">
+                      <span className="text-gray-400 text-sm w-6">{index + 1}</span>
+                      <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
+                        {track.image_url ? (
+                          <img 
+                            src={track.image_url} 
+                            alt={track.album}
+                            className="w-full h-full rounded-lg object-cover"
+                          />
+                        ) : (
+                          <Music className="w-6 h-6 text-gray-400" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-white font-medium">{track.name}</h4>
+                        <p className="text-gray-300 text-sm">{track.artist}</p>
+                        <p className="text-gray-400 text-xs">
+                          Adicionada por {track.added_by_name} • {formatDuration(track.duration_ms)}
+                        </p>
+                      </div>
                       <button
                         onClick={() => removeTrackFromQueue(track.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-colors"
+                        className="text-red-400 hover:text-red-300 p-2 rounded-lg transition-colors"
                         title="Remover da fila"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
-                  </div>
-                )) : (
-                  <div className="text-center py-8 text-gray-400">
-                    <Music className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Fila vazia</p>
-                    <p className="text-sm">Busque e adicione músicas para começar</p>
-                  </div>
+                  ))
                 )}
               </div>
             </div>
           </div>
 
-          {/* Sidebar - Guests */}
+          {/* Sidebar */}
           <div className="space-y-6">
+            {/* Guests */}
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
               <h2 className="text-xl font-bold text-white mb-4 flex items-center">
                 <Users className="w-5 h-5 mr-2" />
                 Convidados ({guests.length})
               </h2>
               
-              <div className="space-y-2">
-                {guests.length > 0 ? guests.map((guest) => (
-                  <div key={guest.id} className="flex items-center space-x-3 bg-white/5 rounded-lg p-3">
-                    <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-                      <User className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-white font-medium">{guest.name}</p>
-                      <p className="text-gray-400 text-xs">
-                        Entrou às {new Date(guest.created_at).toLocaleTimeString('pt-BR', { 
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                )) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {guests.length === 0 ? (
                   <div className="text-center py-4 text-gray-400">
-                    <Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <User className="w-8 h-8 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">Nenhum convidado ainda</p>
-                    <p className="text-xs">Compartilhe o código da festa</p>
                   </div>
+                ) : (
+                  guests.map((guest) => (
+                    <div key={guest.id} className="flex items-center space-x-3 bg-white/5 rounded-lg p-3">
+                      <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-white font-medium">{guest.name}</p>
+                        <p className="text-gray-400 text-xs">
+                          Entrou {new Date(guest.created_at).toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Now Playing - Nova seção */}
-      <NowPlaying />
-
-      {/* Controles de Reprodução */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Play className="w-5 h-5" />
-          Controles de Reprodução
-        </h2>
-        
-        <div className="flex items-center gap-4">
-          <button
-            onClick={skipToPrevious}
-            className="p-3 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
-            title="Música anterior"
-          >
-            <SkipBack className="w-5 h-5" />
-          </button>
-          
-          <button
-            onClick={handlePlayPause}
-            className="p-4 bg-green-500 hover:bg-green-600 text-white rounded-full transition-colors"
-            title={isPlaying ? 'Pausar' : 'Reproduzir'}
-          >
-            {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
-          </button>
-          
-          <button
-            onClick={skipToNext}
-            className="p-3 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
-            title="Próxima música"
-          >
-            <SkipForward className="w-5 h-5" />
-          </button>
-
-          <button
-            onClick={refreshNowPlaying}
-            className="p-3 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-full transition-colors ml-4"
-            title="Atualizar estado"
-          >
-            <RefreshCw className="w-5 h-5" />
-          </button>
         </div>
       </div>
     </div>
