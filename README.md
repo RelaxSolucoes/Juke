@@ -1,136 +1,269 @@
 # 🎵 Juke - Spotify Party App
 
-Um aplicativo de festa colaborativa que permite que convidados adicionem músicas à fila do Spotify do host sem precisar fazer login individual.
+Uma aplicação moderna para criar festas musicais colaborativas usando o Spotify. Permite que hosts criem festas e convidados adicionem músicas à fila em tempo real.
 
-## 🚀 Funcionalidades
+## 🚀 Acesso Rápido
 
-### Para o Host (Organizador da Festa)
-- **Login com Spotify**: Autenticação segura com sua conta Spotify
-- **Criar Festa**: Gere um código único para sua festa
-- **Playlist de Fallback**: Configure uma playlist que toca automaticamente quando ninguém adiciona músicas
-- **Controle de Reprodução**: Play/pause via API do Spotify
-- **Busca de Músicas**: Busque e adicione músicas usando suas credenciais
-- **Visualizar Convidados**: Veja quem está participando da festa
+**🌐 App Online:** [https://juke-seven.vercel.app/](https://juke-seven.vercel.app/)
 
-### Para Convidados
-- **Entrada Simples**: Entre apenas com seu nome, sem login
-- **Busca Colaborativa**: Busque músicas usando as credenciais do host
-- **Adicionar à Fila**: Adicione músicas diretamente à fila do Spotify do host
-- **Interface Responsiva**: Funciona perfeitamente no mobile
+## ✨ Funcionalidades
 
-## 📋 Requisitos
+### 🎯 Para Hosts (Criadores da Festa)
+- **Criar Festa:** Gere um código único para sua festa
+- **Busca Musical Premium:** Sistema de busca em tempo real do Spotify
+- **Gerenciar Convidados:** Veja quem está na festa
+- **Playlist de Fallback:** Inicie uma playlist automática quando não há músicas na fila
+- **Controle Total:** Encerre a festa quando quiser
 
-### Para o Host
-- **Spotify Premium**: Necessário para controlar a reprodução
-- **Dispositivo Ativo**: Tenha o Spotify aberto em algum dispositivo (celular, computador, etc.)
-- **Conexão com Internet**: Para sincronização em tempo real
+### 🎉 Para Convidados
+- **Entrar na Festa:** Use o código da festa para participar
+- **Adicionar Músicas:** Busque e adicione suas músicas favoritas
+- **Interface Intuitiva:** Design responsivo e moderno
+- **Tempo Real:** Veja outros participantes da festa
 
-### Para Convidados
-- **Apenas um navegador**: Não precisa de conta Spotify ou Premium
+## 📱 Responsividade
 
-## 🎯 Como Usar
+### ✅ Melhorias Implementadas (Versão Atual)
+- **Cabeçalho Mobile Otimizado:**
+  - Layout em duas linhas para melhor organização
+  - Textos truncados para evitar sobreposição
+  - Botões compactos com ícones
+  - Código da festa em formato compacto
 
-### 1. Host - Criando uma Festa
-1. Acesse o app e faça login com sua conta Spotify
-2. Clique em "Criar Nova Festa"
-3. Digite o nome da festa
-4. **[OPCIONAL]** Selecione uma playlist de fallback:
-   - Clique em "Selecionar Playlist"
-   - Escolha uma de suas playlists
-   - Esta playlist tocará automaticamente quando ninguém adicionar músicas
-5. Clique em "Criar Festa"
-6. Compartilhe o código gerado com seus convidados
+- **Campos de Busca Responsivos:**
+  - Placeholder adaptativo (mais curto no mobile)
+  - Tamanhos de fonte e padding ajustados
+  - Ícones proporcionais ao tamanho da tela
 
-### 2. Convidados - Entrando na Festa
-1. Acesse o app
-2. Digite o código da festa
-3. Digite seu nome
-4. Comece a buscar e adicionar músicas!
+- **Interface Adaptativa:**
+  - Espaçamentos otimizados para mobile
+  - Elementos flexíveis que se ajustam ao conteúdo
+  - Navegação simplificada em telas pequenas
 
-### 3. Iniciando a Playlist de Fallback
-1. Na tela do host, clique no botão "Playlist" no header
-2. A playlist configurada começará a tocar no seu Spotify
-3. **Importante**: Certifique-se de que o Spotify está aberto em algum dispositivo
+## 🛠️ Tecnologias
 
-## ⚠️ Problemas Comuns e Soluções
+- **Frontend:** React 18 + TypeScript
+- **Styling:** Tailwind CSS
+- **Build:** Vite
+- **Backend:** Supabase (Real-time Database)
+- **API:** Spotify Web API + Web Playback SDK
+- **Deploy:** Vercel
+- **Testes:** Vitest + Testing Library
 
-### "Nenhum dispositivo Spotify ativo encontrado"
-- **Solução**: Abra o Spotify em qualquer dispositivo (celular, computador, etc.)
-- O app precisa de um dispositivo ativo para enviar comandos
-- Aguarde alguns segundos após abrir o Spotify antes de tentar novamente
+## 🏗️ Arquitetura
 
-### "Nenhuma playlist de fallback configurada"
-- **Solução**: Crie uma nova festa e selecione uma playlist durante a criação
-- Festas já criadas sem playlist não podem ter uma adicionada posteriormente
+```
+src/
+├── components/          # Componentes React
+│   ├── HostDashboard.tsx    # Dashboard do host
+│   ├── GuestView.tsx        # Interface do convidado
+│   ├── LoginScreen.tsx      # Tela de login
+│   └── ErrorBoundary.tsx    # Tratamento de erros
+├── contexts/           # Contextos React
+│   └── AuthContext.tsx     # Autenticação
+├── hooks/              # Hooks customizados
+│   ├── useLocalStorage.ts  # Persistência local
+│   ├── useRateLimit.ts     # Controle de rate limiting
+│   └── useDebouncedSearch.ts # Busca com debounce
+├── types/              # Definições TypeScript
+├── utils/              # Utilitários
+│   ├── supabase.ts         # Cliente Supabase
+│   ├── spotify.ts          # Integração Spotify
+│   └── validation.ts       # Validação e sanitização
+└── App.tsx             # Componente principal
+```
 
-### "Spotify Premium é necessário"
-- **Solução**: Apenas o host precisa de Premium, convidados não
-- O controle de reprodução via API requer Premium
+## 🔧 Configuração para Desenvolvimento
 
-### Músicas não aparecem na fila visual
-- **Comportamento Normal**: O app adiciona diretamente à fila do Spotify
-- Verifique a fila no próprio aplicativo do Spotify
+### Pré-requisitos
+- Node.js 18+
+- Conta Spotify Premium
+- Projeto no Supabase
+- App registrado no Spotify for Developers
 
-### Playlist inicia mas mostra erro
-- **Comportamento Normal**: Às vezes o Spotify "acorda" durante o processo
-- Se a música começou a tocar, ignore a mensagem de erro
+### Variáveis de Ambiente
+```env
+VITE_SPOTIFY_CLIENT_ID=seu_client_id_spotify
+VITE_SPOTIFY_REDIRECT_URI=https://juke-seven.vercel.app/callback
+VITE_SUPABASE_URL=sua_url_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_anonima_supabase
+```
 
-## 🛠️ Tecnologias Utilizadas
+### Instalação
+```bash
+# Clone o repositório
+git clone https://github.com/RelaxSolucoes/Juke.git
+cd Juke
 
-- **Frontend**: React + TypeScript + Vite
-- **Styling**: Tailwind CSS
-- **Backend**: Supabase (PostgreSQL + Real-time)
-- **API**: Spotify Web API
-- **Deploy**: Vercel
+# Instale as dependências
+npm install
 
-## 🔧 Arquitetura Simplificada
+# Configure as variáveis de ambiente
+cp .env.example .env
+# Edite o arquivo .env com suas credenciais
 
-1. **Host faz login** → Credenciais salvas na festa (Supabase)
-2. **Convidados entram** → Usam credenciais do host automaticamente
-3. **Busca e adição** → Via API do Spotify com credenciais compartilhadas
-4. **Controle de reprodução** → Comandos diretos para API do Spotify
-5. **Playlist de fallback** → Reprodução automática quando configurada
+# Execute em desenvolvimento
+npm run dev
+```
 
-## 🌐 Deploy
+### Testes
+```bash
+# Executar todos os testes
+npm test
 
-Aplicação disponível em: [https://juke-6kjg5t9zo-ronald-melos-projects.vercel.app/](https://juke-6kjg5t9zo-ronald-melos-projects.vercel.app/)
+# Executar testes em modo watch
+npm run test:watch
 
-## 📝 Notas Importantes
+# Executar testes com coverage
+npm run test:coverage
+```
 
-- **Privacidade**: Convidados não têm acesso às credenciais do host
-- **Segurança**: Tokens são gerenciados automaticamente e renovados quando necessário
-- **Limitações**: Funciona apenas com Spotify Premium para o host
-- **Compatibilidade**: Testado em Chrome, Firefox, Safari e Edge
-- **Performance**: Busca AJAX em tempo real com debounce de 500ms
-- **Mobile**: Interface otimizada para dispositivos móveis
+## 🚀 Deploy
 
-## 🎵 Funcionalidades Avançadas
+### Vercel (Recomendado)
+```bash
+# Deploy para produção
+vercel --prod
 
-### Playlist de Fallback
-- Configure uma playlist que toca automaticamente
-- Ideal para manter a festa animada quando ninguém adiciona músicas
-- Funciona com qualquer playlist pública ou própria do host
+# Deploy para preview
+vercel
+```
 
-### Busca Inteligente
-- Busca em tempo real enquanto você digita
-- Resultados instantâneos da biblioteca completa do Spotify
-- Interface otimizada para mobile e desktop
+### Configuração no Vercel
+1. Conecte seu repositório GitHub
+2. Configure as variáveis de ambiente no dashboard da Vercel
+3. O deploy acontece automaticamente a cada push
 
-### Controle Simplificado
-- Foco total na experiência de adicionar músicas
-- Interface limpa sem elementos desnecessários
-- Feedback visual imediato ao adicionar músicas
+## 🔐 Configuração do Spotify
 
-## 🚀 Próximas Funcionalidades
+1. Acesse [Spotify for Developers](https://developer.spotify.com/dashboard)
+2. Crie um novo app
+3. Configure as Redirect URIs:
+   - `https://juke-seven.vercel.app/callback` (produção)
+   - `http://localhost:5173/callback` (desenvolvimento)
+4. Copie o Client ID para as variáveis de ambiente
 
-- [ ] Votação em músicas da fila
-- [ ] Histórico de músicas tocadas
-- [ ] Temas personalizáveis
+## 🗄️ Configuração do Supabase
+
+### Schema do Banco
+```sql
+-- Tabela de festas
+CREATE TABLE parties (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  code TEXT UNIQUE NOT NULL,
+  host_id TEXT NOT NULL,
+  host_name TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  is_active BOOLEAN DEFAULT true
+);
+
+-- Tabela de convidados
+CREATE TABLE guests (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  party_id UUID REFERENCES parties(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Tabela de músicas
+CREATE TABLE tracks (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  party_id UUID REFERENCES parties(id) ON DELETE CASCADE,
+  spotify_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  artist TEXT NOT NULL,
+  album TEXT,
+  duration_ms INTEGER,
+  image_url TEXT,
+  added_by TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Políticas RLS (Row Level Security)
+ALTER TABLE parties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE guests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tracks ENABLE ROW LEVEL SECURITY;
+
+-- Políticas de acesso público (ajuste conforme necessário)
+CREATE POLICY "Allow all operations on parties" ON parties FOR ALL USING (true);
+CREATE POLICY "Allow all operations on guests" ON guests FOR ALL USING (true);
+CREATE POLICY "Allow all operations on tracks" ON tracks FOR ALL USING (true);
+```
+
+## 📊 Funcionalidades Técnicas
+
+### 🔄 Real-time
+- Sincronização em tempo real via Supabase
+- Atualizações automáticas da lista de convidados
+- Fila de músicas atualizada instantaneamente
+
+### 🛡️ Segurança
+- Validação e sanitização de dados
+- Error boundaries para captura de erros
+- Rate limiting para prevenir spam
+- Políticas RLS no Supabase
+
+### 🎨 UX/UI
+- Design moderno com Tailwind CSS
+- Animações suaves e feedback visual
+- Interface responsiva para todos os dispositivos
+- Tema escuro com gradientes premium
+
+### 🧪 Qualidade
+- Testes unitários com Vitest
+- TypeScript para type safety
+- ESLint para qualidade de código
+- Error handling robusto
+
+## 📈 Melhorias Recentes
+
+### v2.1.0 - Responsividade Mobile
+- ✅ Cabeçalho otimizado para mobile
+- ✅ Layout adaptativo em duas linhas
+- ✅ Botões compactos com tooltips
+- ✅ Textos truncados para evitar overflow
+- ✅ Placeholders adaptativos
+- ✅ Espaçamentos otimizados
+
+### v2.0.0 - Funcionalidades Avançadas
+- ✅ Backend real com Supabase
+- ✅ Sistema de testes completo
+- ✅ Error boundaries e validação
+- ✅ Hooks customizados
+- ✅ Deploy automatizado
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+
+## 🎯 Roadmap
+
+- [ ] Sistema de votação para músicas
+- [ ] Chat em tempo real
+- [ ] Histórico de festas
+- [ ] Playlists personalizadas
 - [ ] Integração com outras plataformas de música
+- [ ] App mobile nativo
+
+## 📞 Suporte
+
+Para suporte ou dúvidas:
+- 📧 Email: suporte@relaxsolucoes.com
+- 🐛 Issues: [GitHub Issues](https://github.com/RelaxSolucoes/Juke/issues)
+- 📖 Documentação: [Wiki do Projeto](https://github.com/RelaxSolucoes/Juke/wiki)
 
 ---
 
-Desenvolvido com ❤️ para festas mais divertidas e colaborativas!
+**Desenvolvido com ❤️ pela equipe Relax Soluções**
 
-**Versão atual**: 2.0 - MVP com Playlist de Fallback
-**Última atualização**: Dezembro 2024
+🎵 *"Música é a linguagem universal que conecta pessoas"* 🎵

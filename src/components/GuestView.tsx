@@ -109,10 +109,43 @@ export const GuestView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-      {/* Header Premium */}
+      {/* Header Premium - Responsivo */}
       <div className="bg-black/30 backdrop-blur-xl border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+          {/* Mobile Layout */}
+          <div className="block sm:hidden">
+            {/* Primeira linha - Nome da festa e ícone */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Music className="w-5 h-5 text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-lg font-bold text-white flex items-center truncate">
+                    {currentParty.name}
+                    <Star className="w-4 h-4 ml-2 text-yellow-400 flex-shrink-0" />
+                  </h1>
+                  <p className="text-purple-200 text-sm truncate">
+                    {user?.name} • {guests.length} pessoas
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Segunda linha - Botão sair */}
+            <div className="flex justify-end">
+              <button
+                onClick={handleLeave}
+                className="bg-red-500/20 hover:bg-red-500/30 text-red-300 px-3 py-2 rounded-lg transition-all flex items-center space-x-2 border border-red-500/30"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="text-sm">Sair</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Desktop Layout */}
+          <div className="hidden sm:flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-xl flex items-center justify-center">
                 <Music className="w-6 h-6 text-white" />
@@ -139,37 +172,37 @@ export const GuestView: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Busca Premium - Área Principal */}
           <div className="lg:col-span-3">
-            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20 shadow-2xl">
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 sm:p-8 border border-white/20 shadow-2xl">
               {/* Header da Busca */}
-              <div className="text-center mb-8">
-                <div className="w-20 h-20 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                  <Search className="w-10 h-10 text-white" />
+              <div className="text-center mb-6 sm:mb-8">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                  <Search className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                 </div>
-                <h2 className="text-3xl font-bold text-white mb-2 flex items-center justify-center">
-                  <Heart className="w-6 h-6 mr-2 text-pink-400" />
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center justify-center">
+                  <Heart className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-pink-400" />
                   Adicione Suas Músicas
-                  <Heart className="w-6 h-6 ml-2 text-pink-400" />
+                  <Heart className="w-5 h-5 sm:w-6 sm:h-6 ml-2 text-pink-400" />
                 </h2>
-                <p className="text-purple-200">
+                <p className="text-purple-200 text-sm sm:text-base">
                   Busque e adicione suas músicas favoritas à festa! 🎶
                 </p>
               </div>
 
               {/* Aviso Premium */}
-              <div className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/30 rounded-2xl p-6 mb-8">
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="w-6 h-6 text-white" />
+              <div className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/30 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8">
+                <div className="flex items-start space-x-3 sm:space-x-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-pink-200 font-semibold text-lg mb-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-pink-200 font-semibold text-base sm:text-lg mb-2">
                       Você é o DJ! ✨
                     </h3>
-                    <p className="text-pink-200/80">
+                    <p className="text-pink-200/80 text-sm sm:text-base">
                       Busque e adicione músicas á fila!
                       Suas músicas serão adicionadas automaticamente! 🚀
                     </p>
@@ -178,20 +211,20 @@ export const GuestView: React.FC = () => {
               </div>
 
               {/* Campo de Busca Premium */}
-              <div className="relative mb-8">
+              <div className="relative mb-6 sm:mb-8">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Search className={`w-6 h-6 transition-colors ${searching ? 'text-pink-400 animate-spin' : 'text-pink-300'}`} />
+                  <Search className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors ${searching ? 'text-pink-400 animate-spin' : 'text-pink-300'}`} />
                 </div>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white/20 border-2 border-white/30 rounded-2xl pl-12 pr-4 py-4 text-white text-lg placeholder-pink-300 focus:outline-none focus:ring-4 focus:ring-pink-500/50 focus:border-pink-400 transition-all duration-300"
-                  placeholder="🎵 Pesquisar..."
+                  className="w-full bg-white/20 border-2 border-white/30 rounded-2xl pl-11 sm:pl-12 pr-4 py-3 sm:py-4 text-white text-base sm:text-lg placeholder-pink-300 focus:outline-none focus:ring-4 focus:ring-pink-500/50 focus:border-pink-400 transition-all duration-300"
+                  placeholder="🎵 Buscar música..."
                 />
                 {searching && (
                   <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
-                    <div className="w-6 h-6 border-2 border-pink-400 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-pink-400 border-t-transparent rounded-full animate-spin"></div>
                   </div>
                 )}
               </div>

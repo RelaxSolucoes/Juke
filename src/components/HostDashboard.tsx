@@ -382,10 +382,70 @@ export const HostDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-      {/* Header Premium */}
+      {/* Header Premium - Responsivo */}
       <div className="bg-black/30 backdrop-blur-xl border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+          {/* Mobile Layout */}
+          <div className="block sm:hidden">
+            {/* Primeira linha - Nome da festa e ícone */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Music className="w-5 h-5 text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-lg font-bold text-white truncate">{currentParty?.name}</h1>
+                  <p className="text-purple-200 text-sm truncate">
+                    {user?.name} • {guests.length} convidados
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Segunda linha - Botões */}
+            <div className="flex items-center justify-between space-x-2">
+              {/* Código da Festa - Compacto */}
+              <div className="bg-white/10 rounded-lg px-3 py-2 border border-white/20 flex-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 min-w-0">
+                    <span className="text-purple-200 text-xs">Código:</span>
+                    <code className="text-white font-mono text-sm truncate">{currentParty?.code}</code>
+                  </div>
+                  <button
+                    onClick={copyPartyCode}
+                    className="p-1 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0"
+                    title="Copiar código"
+                  >
+                    {codeCopied ? (
+                      <Check className="w-4 h-4 text-green-400" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-purple-300" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Botões de ação - Compactos */}
+              <button
+                onClick={handleStartFallbackPlaylist}
+                className="bg-green-500/20 hover:bg-green-500/30 text-green-300 p-2 rounded-lg transition-all border border-green-500/30 flex-shrink-0"
+                title="Playlist"
+              >
+                <Play className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={handleLeaveParty}
+                className="bg-red-500/20 hover:bg-red-500/30 text-red-300 p-2 rounded-lg transition-all border border-red-500/30 flex-shrink-0"
+                title="Encerrar"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Desktop Layout */}
+          <div className="hidden sm:flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
                 <Music className="w-6 h-6 text-white" />
@@ -439,41 +499,41 @@ export const HostDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Busca Premium - Área Principal */}
           <div className="lg:col-span-3">
-            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20 shadow-2xl">
+            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 sm:p-8 border border-white/20 shadow-2xl">
               {/* Header da Busca */}
-              <div className="text-center mb-8">
-                <div className="w-20 h-20 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                  <Search className="w-10 h-10 text-white" />
+              <div className="text-center mb-6 sm:mb-8">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                  <Search className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                 </div>
-                <h2 className="text-3xl font-bold text-white mb-2 flex items-center justify-center">
-                  <Sparkles className="w-6 h-6 mr-2 text-yellow-400" />
+                <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-400" />
                   Busca Musical Premium
-                  <Sparkles className="w-6 h-6 ml-2 text-yellow-400" />
+                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 ml-2 text-yellow-400" />
                 </h2>
-                <p className="text-purple-200">
+                <p className="text-purple-200 text-sm sm:text-base">
                   Digite e veja a mágica acontecer em tempo real ✨
                 </p>
               </div>
 
               {/* Campo de Busca Premium */}
-              <div className="relative mb-8">
+              <div className="relative mb-6 sm:mb-8">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Search className={`w-6 h-6 transition-colors ${searching ? 'text-purple-400 animate-spin' : 'text-purple-300'}`} />
+                  <Search className={`w-5 h-5 sm:w-6 sm:h-6 transition-colors ${searching ? 'text-purple-400 animate-spin' : 'text-purple-300'}`} />
                 </div>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white/20 border-2 border-white/30 rounded-2xl pl-12 pr-4 py-4 text-white text-lg placeholder-purple-300 focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:border-purple-400 transition-all duration-300"
-                  placeholder="🎵 Digite o nome da música ou artista..."
+                  className="w-full bg-white/20 border-2 border-white/30 rounded-2xl pl-11 sm:pl-12 pr-4 py-3 sm:py-4 text-white text-base sm:text-lg placeholder-purple-300 focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:border-purple-400 transition-all duration-300"
+                  placeholder="🎵 Buscar música ou artista..."
                 />
                 {searching && (
                   <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
-                    <div className="w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
                   </div>
                 )}
               </div>
