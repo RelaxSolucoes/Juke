@@ -132,13 +132,25 @@ export const updateCurrentTrack = async (partyId: string, trackId: string | null
   if (error) throw error;
 };
 
-export const deactivateParty = async (partyId: string) => {
-  const { error } = await supabase
-    .from('parties')
-    .update({ is_active: false })
-    .eq('id', partyId);
+export const deactivateParty = async (partyId: string, hostId: string) => {
+  try {
+    const { data, error } = await supabase
+      .rpc('encerrar_festa', {
+        festa_id: partyId,
+        host_user_id: hostId
+      });
 
-  if (error) throw error;
+    if (error) {
+      console.error('Erro ao encerrar festa:', error);
+      throw error;
+    }
+
+    console.log('✅ Festa encerrada com sucesso');
+    return data;
+  } catch (error) {
+    console.error('Erro ao encerrar festa:', error);
+    throw error;
+  }
 };
 
 // Buscar credenciais do host para permitir que convidados façam buscas

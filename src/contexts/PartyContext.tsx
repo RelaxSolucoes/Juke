@@ -9,6 +9,10 @@ import {
   saveHostCredentials,
   generatePartyCode,
   getCurrentlyPlaying,
+  getUserPlaylists,
+  startPlaylistPlayback,
+  saveFallbackPlaylist,
+  getFallbackPlaylist,
 } from '../utils/spotify';
 import {
   createPartyInDB,
@@ -30,7 +34,7 @@ interface PartyContextType {
   isPlaying: boolean;
   currentTrack: Track | null;
   nowPlaying: any | null;
-  createParty: (name: string) => Promise<string>;
+  createParty: (name: string, selectedPlaylist?: any) => Promise<string>;
   joinParty: (code: string, guestName: string) => Promise<boolean>;
   addTrackToQueue: (track: any, guestName?: string) => Promise<void>;
   pausePlayback: () => Promise<void>;
@@ -41,6 +45,10 @@ interface PartyContextType {
   leaveParty: () => void;
   searchTracks: (query: string) => Promise<any[]>;
   getCurrentPlaybackState: () => Promise<void>;
+  // Funções de playlist de fallback
+  getUserPlaylists: () => Promise<any[]>;
+  startFallbackPlaylist: () => Promise<void>;
+  saveFallbackPlaylist: (playlist: any) => Promise<boolean>;
 }
 
 const PartyContext = createContext<PartyContextType | undefined>(undefined);
@@ -136,7 +144,7 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     console.log('Função desabilitada para MVP');
   };
 
-  const createParty = async (name: string): Promise<string> => {
+  const createParty = async (name: string, selectedPlaylist?: any): Promise<string> => {
     if (!user) throw new Error('Usuário não autenticado');
 
     const partyCode = generatePartyCode();
@@ -160,6 +168,11 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
         updated_at: partyData.updated_at,
       };
 
+      // Configurar estado local PRIMEIRO
+      setCurrentParty(newParty);
+      setQueue([]);
+      setGuests([]);
+
       // Salvar credenciais do host na festa
       if (user.access_token && user.refresh_token) {
         const saved = await saveHostCredentials(
@@ -174,9 +187,23 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
         }
       }
 
-      setCurrentParty(newParty);
-      setQueue([]);
-      setGuests([]);
+      // Salvar playlist de fallback se selecionada
+      if (selectedPlaylist) {
+        console.log('💾 Salvando playlist de fallback:', selectedPlaylist.name);
+        const playlistSaved = await saveFallbackPlaylist(
+          partyCode,
+          selectedPlaylist.id,
+          selectedPlaylist.name,
+          selectedPlaylist.uri
+        );
+        
+        if (playlistSaved) {
+          console.log('✅ Playlist de fallback configurada:', selectedPlaylist.name);
+        } else {
+          console.warn('⚠️ Não foi possível salvar a playlist de fallback');
+        }
+      }
+
       return partyCode;
     } catch (error) {
       console.error('Erro ao criar festa:', error);
@@ -304,11 +331,13 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
   };
 
   const leaveParty = async () => {
-    if (currentParty && isHost) {
+    if (currentParty && isHost && user) {
       try {
-        await deactivateParty(currentParty.id);
+        await deactivateParty(currentParty.id, user.id);
+        console.log('🎉 Festa encerrada com sucesso!');
       } catch (error) {
         console.error('Erro ao desativar festa:', error);
+        // Mesmo com erro, vamos limpar o estado local
       }
     }
 
@@ -324,6 +353,79 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     
     // Limpar localStorage
     localStorage.removeItem('current-party');
+  };
+
+  // ===== FUNÇÕES DE PLAYLIST DE FALLBACK =====
+
+  const getUserPlaylistsFunc = async (): Promise<any[]> => {
+    if (!user?.access_token) {
+      console.error('Usuário não autenticado ou sem token');
+      return [];
+    }
+
+    try {
+      return await getUserPlaylists(user.access_token);
+    } catch (error) {
+      console.error('Erro ao buscar playlists:', error);
+      return [];
+    }
+  };
+
+  const startFallbackPlaylist = async (): Promise<void> => {
+    if (!currentParty) {
+      throw new Error('Nenhuma festa ativa');
+    }
+
+    try {
+      console.log('🔍 Buscando playlist de fallback para festa:', currentParty.code);
+      const fallbackPlaylist = await getFallbackPlaylist(currentParty.code);
+      
+      if (!fallbackPlaylist) {
+        throw new Error('Nenhuma playlist de fallback configurada para esta festa. Configure uma playlist na criação da festa.');
+      }
+
+      console.log('🎵 Iniciando playlist:', fallbackPlaylist.playlistName);
+      await startPlaylistPlayback(fallbackPlaylist.playlistUri, currentParty.code);
+      console.log('✅ Playlist de fallback iniciada:', fallbackPlaylist.playlistName);
+    } catch (error) {
+      console.error('Erro ao iniciar playlist de fallback:', error);
+      
+      // Melhorar mensagem de erro baseada no tipo
+      if (error instanceof Error) {
+        if (error.message.includes('Nenhum dispositivo Spotify ativo')) {
+          throw error; // Manter mensagem específica
+        } else if (error.message.includes('Premium')) {
+          throw error; // Manter mensagem específica
+        } else if (error.message.includes('playlist de fallback configurada')) {
+          throw error; // Manter mensagem original
+        } else if (error.message.includes('404')) {
+          throw new Error('Nenhum dispositivo Spotify ativo encontrado. Abra o Spotify em algum dispositivo e tente novamente.');
+        } else {
+          throw new Error('Erro ao iniciar playlist. Verifique se o Spotify está ativo e tente novamente.');
+        }
+      }
+      
+      throw error;
+    }
+  };
+
+  const saveFallbackPlaylistFunc = async (playlist: any): Promise<boolean> => {
+    if (!currentParty) {
+      console.error('Nenhuma festa ativa');
+      return false;
+    }
+
+    try {
+      return await saveFallbackPlaylist(
+        currentParty.code,
+        playlist.id,
+        playlist.name,
+        playlist.uri
+      );
+    } catch (error) {
+      console.error('Erro ao salvar playlist de fallback:', error);
+      return false;
+    }
   };
 
   const value: PartyContextType = {
@@ -344,6 +446,10 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
     leaveParty,
     searchTracks,
     getCurrentPlaybackState,
+    // Funções de playlist de fallback
+    getUserPlaylists: getUserPlaylistsFunc,
+    startFallbackPlaylist,
+    saveFallbackPlaylist: saveFallbackPlaylistFunc,
   };
 
   return (

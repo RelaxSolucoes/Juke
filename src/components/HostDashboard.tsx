@@ -42,6 +42,9 @@ export const HostDashboard: React.FC = () => {
     removeTrackFromQueue,
     leaveParty,
     searchTracks,
+    getUserPlaylists,
+    startFallbackPlaylist,
+    saveFallbackPlaylist,
   } = useParty();
 
   const [showCreateParty, setShowCreateParty] = useState(!currentParty);
@@ -51,6 +54,16 @@ export const HostDashboard: React.FC = () => {
   const [searching, setSearching] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
   const [addedTracks, setAddedTracks] = useState<Set<string>>(new Set());
+  
+  // Estados para playlist de fallback
+  const [userPlaylists, setUserPlaylists] = useState<any[]>([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<any | null>(null);
+  const [loadingPlaylists, setLoadingPlaylists] = useState(false);
+  const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
+  
+  // Estados para encerrar festa
+  const [showEndPartyModal, setShowEndPartyModal] = useState(false);
+  const [endingParty, setEndingParty] = useState(false);
 
   // Busca AJAX em tempo real
   useEffect(() => {
@@ -74,15 +87,48 @@ export const HostDashboard: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [searchQuery, searchTracks]);
 
+  // Carregar playlists do usuário
+  const loadUserPlaylists = async () => {
+    setLoadingPlaylists(true);
+    try {
+      const playlists = await getUserPlaylists();
+      setUserPlaylists(playlists);
+      setShowPlaylistSelector(true);
+    } catch (error) {
+      console.error('Erro ao carregar playlists:', error);
+      alert('Erro ao carregar suas playlists. Tente novamente.');
+    } finally {
+      setLoadingPlaylists(false);
+    }
+  };
+
   const handleCreateParty = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!partyName.trim()) return;
 
     try {
-      await createParty(partyName.trim());
+      // Passar a playlist selecionada diretamente para createParty
+      const partyCode = await createParty(partyName.trim(), selectedPlaylist);
+      
       setShowCreateParty(false);
+      setSelectedPlaylist(null); // Limpar seleção
+      setShowPlaylistSelector(false);
     } catch (error) {
       console.error('Erro ao criar festa:', error);
+      alert('Erro ao criar festa. Tente novamente.');
+    }
+  };
+
+  const handleStartFallbackPlaylist = async () => {
+    try {
+      await startFallbackPlaylist();
+      alert('🎵 Playlist de fallback iniciada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao iniciar playlist:', error);
+      
+      // Mostrar mensagem de erro específica
+      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido ao iniciar playlist';
+      alert(`❌ ${errorMessage}`);
     }
   };
 
@@ -128,7 +174,36 @@ export const HostDashboard: React.FC = () => {
   };
 
   const handleLeaveParty = () => {
-    leaveParty();
+    setShowEndPartyModal(true);
+  };
+
+  const confirmEndParty = async () => {
+    setEndingParty(true);
+    
+    try {
+      await leaveParty();
+      
+      // Limpar estados locais
+      setSearchQuery('');
+      setSearchResults([]);
+      setAddedTracks(new Set());
+      setSelectedPlaylist(null);
+      setShowPlaylistSelector(false);
+      setUserPlaylists([]);
+      setShowEndPartyModal(false);
+      
+      // Pequeno delay para suavizar a transição
+      setTimeout(() => {
+        setShowCreateParty(true);
+        setEndingParty(false);
+      }, 500);
+      
+    } catch (error) {
+      console.error('Erro ao encerrar festa:', error);
+      setEndingParty(false);
+      setShowEndPartyModal(false);
+      alert('❌ Erro ao encerrar festa. Tente novamente.');
+    }
   };
 
   if (showCreateParty) {
@@ -161,6 +236,126 @@ export const HostDashboard: React.FC = () => {
                   placeholder="Ex: Festa de Sábado 🎉"
                   maxLength={100}
                 />
+              </div>
+
+              {/* Seleção de Playlist de Fallback */}
+              <div>
+                <label className="block text-sm font-medium text-purple-200 mb-2">
+                  🎵 Playlist de fundo (opcional)
+                </label>
+                <p className="text-xs text-purple-300 mb-3">
+                  Escolha uma playlist que tocará automaticamente quando ninguém adicionar músicas
+                </p>
+                
+                {selectedPlaylist ? (
+                  /* Playlist Selecionada */
+                  <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-400/50 rounded-xl p-4 flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Music className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-semibold text-sm truncate">✅ {selectedPlaylist.name}</p>
+                      <p className="text-green-300 text-xs">{selectedPlaylist.tracks?.total || 0} músicas • Playlist selecionada</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPlaylist(null);
+                        setShowPlaylistSelector(false);
+                        setUserPlaylists([]);
+                      }}
+                      className="text-green-300 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-all"
+                      title="Remover playlist"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                ) : !showPlaylistSelector ? (
+                  /* Botão para Buscar Playlists */
+                  <button
+                    type="button"
+                    onClick={loadUserPlaylists}
+                    disabled={loadingPlaylists}
+                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-purple-200 hover:bg-white/20 transition-all flex items-center justify-center space-x-2 group"
+                  >
+                    {loadingPlaylists ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-300"></div>
+                        <span>Carregando suas playlists...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                        <span>🔍 Buscar Minhas Playlists</span>
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  /* Lista de Playlists */
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-white font-medium text-sm">Suas playlists:</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowPlaylistSelector(false);
+                          setUserPlaylists([]);
+                        }}
+                        className="text-purple-300 hover:text-white text-xs"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                    
+                    {userPlaylists.length === 0 ? (
+                      <div className="text-center py-4 text-purple-300">
+                        <Music className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Nenhuma playlist encontrada</p>
+                      </div>
+                    ) : (
+                      <div className="max-h-40 overflow-y-auto space-y-2 custom-scrollbar">
+                        {userPlaylists.map((playlist) => (
+                          <button
+                            key={playlist.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedPlaylist(playlist);
+                              setShowPlaylistSelector(false);
+                            }}
+                            className="w-full text-left p-3 rounded-xl transition-all bg-white/5 hover:bg-white/15 border border-white/10 hover:border-white/30 group"
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <Music className="w-5 h-5 text-white" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white font-medium text-sm truncate group-hover:text-purple-200">
+                                  {playlist.name}
+                                </p>
+                                <p className="text-purple-300 text-xs">
+                                  {playlist.tracks?.total || 0} músicas
+                                  {playlist.public === false && ' • Privada'}
+                                </p>
+                              </div>
+                              <Plus className="w-4 h-4 text-purple-300 group-hover:text-white opacity-0 group-hover:opacity-100 transition-all" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPlaylistSelector(false);
+                        setUserPlaylists([]);
+                      }}
+                      className="w-full text-purple-300 text-sm hover:text-white transition-colors py-2"
+                    >
+                      ❌ Não usar playlist de fundo
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="flex space-x-3 pt-2">
@@ -202,6 +397,16 @@ export const HostDashboard: React.FC = () => {
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* Botão Playlist de Fallback */}
+              <button
+                onClick={handleStartFallbackPlaylist}
+                className="bg-green-500/20 hover:bg-green-500/30 text-green-300 px-4 py-2 rounded-xl transition-all flex items-center space-x-2 border border-green-500/30"
+                title="Iniciar playlist de fundo"
+              >
+                <Play className="w-4 h-4" />
+                <span>Playlist</span>
+              </button>
+
               {/* Código da Festa */}
               <div className="bg-white/10 rounded-xl px-4 py-2 border border-white/20">
                 <div className="flex items-center space-x-2">
@@ -224,9 +429,10 @@ export const HostDashboard: React.FC = () => {
               <button
                 onClick={handleLeaveParty}
                 className="bg-red-500/20 hover:bg-red-500/30 text-red-300 px-4 py-2 rounded-xl transition-all flex items-center space-x-2 border border-red-500/30"
+                title="Encerrar festa para todos"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Sair</span>
+                <span>Encerrar</span>
               </button>
             </div>
           </div>
@@ -399,7 +605,63 @@ export const HostDashboard: React.FC = () => {
         </div>
       </div>
 
-
+      {/* Modal de Confirmação para Encerrar Festa */}
+      {showEndPartyModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20 shadow-2xl max-w-md w-full animate-scale-up">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <LogOut className="w-8 h-8 text-red-400" />
+              </div>
+              
+              <h3 className="text-2xl font-bold text-white mb-2">
+                Encerrar Festa?
+              </h3>
+              
+              <p className="text-red-200 mb-6">
+                Esta ação não pode ser desfeita!
+              </p>
+              
+              <div className="bg-white/5 rounded-xl p-4 mb-6 text-left">
+                <p className="text-white font-medium mb-2">O que acontecerá:</p>
+                <ul className="text-purple-200 text-sm space-y-1">
+                  <li>• A festa será finalizada para todos</li>
+                  <li>• Todos os convidados serão removidos</li>
+                  <li>• A fila de músicas será limpa</li>
+                  <li>• Você voltará para criar uma nova festa</li>
+                </ul>
+              </div>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowEndPartyModal(false)}
+                  disabled={endingParty}
+                  className="flex-1 bg-gray-600/50 hover:bg-gray-600/70 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmEndParty}
+                  disabled={endingParty}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 flex items-center justify-center space-x-2"
+                >
+                  {endingParty ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Encerrando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <LogOut className="w-4 h-4" />
+                      <span>Encerrar Festa</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

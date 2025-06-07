@@ -300,13 +300,27 @@ const makeSpotifyRequest = async (
           throw new Error(`Spotify API error: ${retryResponse.status}`);
         }
         
-        return await retryResponse.json();
+        // Verificar se há conteúdo para fazer parse JSON
+        const contentType = retryResponse.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const text = await retryResponse.text();
+          return text ? JSON.parse(text) : null;
+        }
+        return null;
       }
     }
     throw new Error(`Spotify API error: ${response.status}`);
   }
 
-  return await response.json();
+  // Verificar se há conteúdo para fazer parse JSON
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
+  }
+  
+  // Para respostas sem conteúdo (como 204 No Content)
+  return null;
 };
 
 // Buscar músicas usando credenciais do host
@@ -464,6 +478,229 @@ export const formatDuration = (ms: number): string => {
   const minutes = Math.floor(ms / 60000);
   const seconds = Math.floor((ms % 60000) / 1000);
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+};
+
+// ===== FUNÇÕES DE PLAYLIST DE FALLBACK =====
+
+// Buscar playlists do usuário (host) - usando token direto do usuário
+export const getUserPlaylists = async (accessToken: string): Promise<any[]> => {
+  try {
+    const response = await fetch('https://api.spotify.com/v1/me/playlists?limit=50', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.items || [];
+  } catch (error) {
+    console.error('Erro ao buscar playlists:', error);
+    return [];
+  }
+};
+
+// Função alternativa para buscar playlists usando credenciais da festa (para depois)
+export const getUserPlaylistsFromParty = async (partyCode: string): Promise<any[]> => {
+  try {
+    const response = await makeSpotifyRequest(
+      '/me/playlists?limit=50',
+      partyCode
+    );
+    
+    return response.items || [];
+  } catch (error) {
+    console.error('Erro ao buscar playlists:', error);
+    return [];
+  }
+};
+
+// Iniciar reprodução de uma playlist
+export const startPlaylistPlayback = async (
+  playlistUri: string, 
+  partyCode: string
+): Promise<void> => {
+  try {
+    const credentials = await getHostCredentials(partyCode);
+    if (!credentials) {
+      throw new Error('Credenciais do host não encontradas');
+    }
+
+    let { hostToken } = credentials;
+
+    // Verificar se precisa renovar o token
+    if (isTokenExpiringSoon(credentials.tokenExpiresAt)) {
+      console.log('🔄 Token expirando, renovando...');
+      const newToken = await refreshHostToken(partyCode, credentials.hostRefreshToken);
+      if (newToken) {
+        hostToken = newToken;
+      }
+    }
+
+    console.log('🎵 Enviando comando para iniciar playlist:', playlistUri);
+    
+    const response = await fetch(`${SPOTIFY_API_BASE}/me/player/play`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${hostToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        context_uri: playlistUri
+      })
+    });
+
+    console.log('📡 Resposta da API Spotify:', response.status, response.statusText);
+
+    // Sucesso: 204 (No Content) ou 200 (OK)
+    if (response.status === 204 || response.status === 200) {
+      console.log('✅ Playlist iniciada com sucesso');
+      return;
+    }
+
+    // Erro 404: Nenhum dispositivo ativo
+    if (response.status === 404) {
+      throw new Error('Nenhum dispositivo Spotify ativo encontrado. Abra o Spotify em algum dispositivo e tente novamente.');
+    }
+
+    // Erro 403: Premium necessário
+    if (response.status === 403) {
+      throw new Error('Spotify Premium é necessário para controlar a reprodução.');
+    }
+
+    // Erro 401: Token inválido, tentar renovar
+    if (response.status === 401) {
+      console.log('🔄 Token inválido, tentando renovar...');
+      const newToken = await refreshHostToken(partyCode, credentials.hostRefreshToken);
+      if (newToken) {
+        // Tentar novamente com o novo token
+        const retryResponse = await fetch(`${SPOTIFY_API_BASE}/me/player/play`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${newToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            context_uri: playlistUri
+          })
+        });
+        
+        if (retryResponse.status === 204 || retryResponse.status === 200) {
+          console.log('✅ Playlist iniciada com sucesso (após renovar token)');
+          return;
+        }
+        
+        if (retryResponse.status === 404) {
+          throw new Error('Nenhum dispositivo Spotify ativo encontrado. Abra o Spotify em algum dispositivo e tente novamente.');
+        }
+      }
+    }
+
+    // Outros erros
+    const errorText = await response.text().catch(() => 'Erro desconhecido');
+    console.error('❌ Erro da API Spotify:', response.status, errorText);
+    throw new Error(`Erro ao iniciar playlist: ${response.status} - ${errorText}`);
+    
+  } catch (error) {
+    console.error('❌ Erro ao iniciar playlist:', error);
+    throw error;
+  }
+};
+
+// Salvar playlist de fallback na festa
+export const saveFallbackPlaylist = async (
+  partyCode: string,
+  playlistId: string,
+  playlistName: string,
+  playlistUri: string
+): Promise<boolean> => {
+  try {
+    console.log('💾 Salvando playlist de fallback:', {
+      partyCode,
+      playlistId,
+      playlistName,
+      playlistUri
+    });
+
+    const { data, error } = await supabase
+      .from('parties')
+      .update({
+        fallback_playlist_id: playlistId,
+        fallback_playlist_name: playlistName,
+        fallback_playlist_uri: playlistUri
+      })
+      .eq('code', partyCode)
+      .eq('is_active', true)
+      .select();
+
+    if (error) {
+      console.error('❌ Erro ao salvar playlist de fallback:', error);
+      return false;
+    }
+
+    if (!data || data.length === 0) {
+      console.error('❌ Nenhuma festa encontrada com o código:', partyCode);
+      return false;
+    }
+
+    console.log('✅ Playlist de fallback salva com sucesso:', data[0]);
+    return true;
+  } catch (error) {
+    console.error('❌ Erro ao salvar playlist de fallback:', error);
+    return false;
+  }
+};
+
+// Buscar playlist de fallback da festa
+export const getFallbackPlaylist = async (partyCode: string): Promise<{
+  playlistId: string;
+  playlistName: string;
+  playlistUri: string;
+} | null> => {
+  try {
+    console.log('🔍 Buscando playlist de fallback para festa:', partyCode);
+    
+    const { data, error } = await supabase
+      .from('parties')
+      .select('fallback_playlist_id, fallback_playlist_name, fallback_playlist_uri')
+      .eq('code', partyCode)
+      .eq('is_active', true)
+      .single();
+
+    if (error) {
+      console.error('❌ Erro ao buscar playlist de fallback:', error);
+      return null;
+    }
+
+    if (!data) {
+      console.error('❌ Nenhuma festa encontrada com código:', partyCode);
+      return null;
+    }
+
+    if (!data.fallback_playlist_id) {
+      console.log('⚠️ Festa encontrada mas sem playlist de fallback configurada');
+      return null;
+    }
+
+    console.log('✅ Playlist de fallback encontrada:', {
+      playlistId: data.fallback_playlist_id,
+      playlistName: data.fallback_playlist_name,
+      playlistUri: data.fallback_playlist_uri
+    });
+
+    return {
+      playlistId: data.fallback_playlist_id,
+      playlistName: data.fallback_playlist_name,
+      playlistUri: data.fallback_playlist_uri
+    };
+  } catch (error) {
+    console.error('❌ Erro ao buscar playlist de fallback:', error);
+    return null;
+  }
 };
 
 // ===== FUNÇÕES LEGADAS (manter compatibilidade) =====

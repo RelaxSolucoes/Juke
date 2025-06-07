@@ -1,259 +1,136 @@
 # 🎵 Juke - Spotify Party App
 
-**Sistema de festa colaborativa do Spotify ultra-simplificado**
+Um aplicativo de festa colaborativa que permite que convidados adicionem músicas à fila do Spotify do host sem precisar fazer login individual.
 
-[![Deploy](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://juke-seven.vercel.app/)
-[![Spotify API](https://img.shields.io/badge/Spotify-API-1DB954?logo=spotify)](https://developer.spotify.com/documentation/web-api)
-[![Supabase](https://img.shields.io/badge/Database-Supabase-3ECF8E?logo=supabase)](https://supabase.com)
+## 🚀 Funcionalidades
 
-## 🎯 **O que é o Juke?**
+### Para o Host (Organizador da Festa)
+- **Login com Spotify**: Autenticação segura com sua conta Spotify
+- **Criar Festa**: Gere um código único para sua festa
+- **Playlist de Fallback**: Configure uma playlist que toca automaticamente quando ninguém adiciona músicas
+- **Controle de Reprodução**: Play/pause via API do Spotify
+- **Busca de Músicas**: Busque e adicione músicas usando suas credenciais
+- **Visualizar Convidados**: Veja quem está participando da festa
 
-O Juke é um aplicativo que permite criar festas colaborativas onde **qualquer pessoa pode adicionar músicas à fila do Spotify** sem precisar de login individual. O sistema usa as credenciais do host para que todos os convidados possam buscar e adicionar músicas diretamente na conta Spotify do anfitrião.
+### Para Convidados
+- **Entrada Simples**: Entre apenas com seu nome, sem login
+- **Busca Colaborativa**: Busque músicas usando as credenciais do host
+- **Adicionar à Fila**: Adicione músicas diretamente à fila do Spotify do host
+- **Interface Responsiva**: Funciona perfeitamente no mobile
 
-### ✨ **Principais Características:**
-- 🎪 **Zero login para convidados** - Apenas nome necessário
-- 🎵 **Busca colaborativa** - Todos podem buscar músicas usando credenciais do host
-- 🎮 **Controle remoto** - Host controla qualquer dispositivo Spotify
-- 💚 **Spotify Free compatível** - Não precisa Premium
-- ⚡ **Ultra-simples** - 90% menos complexidade que sistemas tradicionais
+## 📋 Requisitos
 
----
+### Para o Host
+- **Spotify Premium**: Necessário para controlar a reprodução
+- **Dispositivo Ativo**: Tenha o Spotify aberto em algum dispositivo (celular, computador, etc.)
+- **Conexão com Internet**: Para sincronização em tempo real
 
-## 🚀 **Como Funciona**
+### Para Convidados
+- **Apenas um navegador**: Não precisa de conta Spotify ou Premium
 
-### 👑 **Para Hosts (Anfitriões):**
-1. **Login no Spotify** → Suas credenciais são salvas automaticamente
-2. **Criar festa** → Gera código de 6 dígitos
-3. **Compartilhar código** → Convidados entram com o código
-4. **Controlar reprodução** → Play/pause/skip via API do Spotify
+## 🎯 Como Usar
 
-### 👥 **Para Convidados:**
-1. **Entrar com código + nome** → Sem necessidade de login no Spotify
-2. **Buscar músicas** → Sistema usa credenciais do host automaticamente
-3. **Adicionar à fila** → Músicas vão direto para o Spotify do host
-4. **Ver fila em tempo real** → Atualizações instantâneas
+### 1. Host - Criando uma Festa
+1. Acesse o app e faça login com sua conta Spotify
+2. Clique em "Criar Nova Festa"
+3. Digite o nome da festa
+4. **[OPCIONAL]** Selecione uma playlist de fallback:
+   - Clique em "Selecionar Playlist"
+   - Escolha uma de suas playlists
+   - Esta playlist tocará automaticamente quando ninguém adicionar músicas
+5. Clique em "Criar Festa"
+6. Compartilhe o código gerado com seus convidados
 
----
+### 2. Convidados - Entrando na Festa
+1. Acesse o app
+2. Digite o código da festa
+3. Digite seu nome
+4. Comece a buscar e adicionar músicas!
 
-## 🛠️ **Tecnologias Utilizadas**
+### 3. Iniciando a Playlist de Fallback
+1. Na tela do host, clique no botão "Playlist" no header
+2. A playlist configurada começará a tocar no seu Spotify
+3. **Importante**: Certifique-se de que o Spotify está aberto em algum dispositivo
 
-### **Frontend:**
-- ⚛️ **React 18** + TypeScript
-- 🎨 **Tailwind CSS** - Design moderno e responsivo
-- ⚡ **Vite** - Build tool ultra-rápido
-- 🎯 **Lucide React** - Ícones consistentes
+## ⚠️ Problemas Comuns e Soluções
 
-### **Backend:**
-- 🗄️ **Supabase** - Database PostgreSQL + Real-time
-- 🔐 **Row Level Security (RLS)** - Segurança avançada
-- 🔄 **Real-time subscriptions** - Atualizações instantâneas
+### "Nenhum dispositivo Spotify ativo encontrado"
+- **Solução**: Abra o Spotify em qualquer dispositivo (celular, computador, etc.)
+- O app precisa de um dispositivo ativo para enviar comandos
+- Aguarde alguns segundos após abrir o Spotify antes de tentar novamente
 
-### **Integração:**
-- 🎵 **Spotify Web API** - Busca e controle de reprodução
-- 🔑 **OAuth 2.0 + PKCE** - Autenticação segura
-- 🔄 **Auto-refresh tokens** - Sistema robusto de renovação
+### "Nenhuma playlist de fallback configurada"
+- **Solução**: Crie uma nova festa e selecione uma playlist durante a criação
+- Festas já criadas sem playlist não podem ter uma adicionada posteriormente
 
-### **Deploy:**
-- 🚀 **Vercel** - Deploy automático e CDN global
-- 🌐 **HTTPS** - Necessário para Spotify API
+### "Spotify Premium é necessário"
+- **Solução**: Apenas o host precisa de Premium, convidados não
+- O controle de reprodução via API requer Premium
 
----
+### Músicas não aparecem na fila visual
+- **Comportamento Normal**: O app adiciona diretamente à fila do Spotify
+- Verifique a fila no próprio aplicativo do Spotify
 
-## 📋 **Funcionalidades Detalhadas**
+### Playlist inicia mas mostra erro
+- **Comportamento Normal**: Às vezes o Spotify "acorda" durante o processo
+- Se a música começou a tocar, ignore a mensagem de erro
 
-### 🎪 **Sistema de Festas**
-- ✅ Criação de festas com código único
-- ✅ Entrada de convidados apenas com nome
-- ✅ Lista de participantes em tempo real
-- ✅ Encerramento automático quando host sai
+## 🛠️ Tecnologias Utilizadas
 
-### 🎵 **Gerenciamento de Música**
-- ✅ Busca de músicas usando credenciais compartilhadas
-- ✅ Adição à fila do Spotify do host
-- ✅ Visualização da fila em tempo real
-- ✅ Remoção de músicas (apenas host)
-- ✅ Informações detalhadas (artista, álbum, duração)
+- **Frontend**: React + TypeScript + Vite
+- **Styling**: Tailwind CSS
+- **Backend**: Supabase (PostgreSQL + Real-time)
+- **API**: Spotify Web API
+- **Deploy**: Vercel
 
-### 🎮 **Controles de Reprodução**
-- ✅ Play/Pause via API do Spotify
-- ✅ Pular para próxima música
-- ✅ Pular para música anterior
-- ✅ Monitoramento do estado atual
-- ✅ Funciona com qualquer dispositivo Spotify do host
+## 🔧 Arquitetura Simplificada
 
-### 🔐 **Sistema de Credenciais**
-- ✅ Salvamento automático de tokens do host
-- ✅ Renovação automática quando expira
-- ✅ Compartilhamento seguro via Supabase
-- ✅ Verificação de expiração a cada 5 minutos
+1. **Host faz login** → Credenciais salvas na festa (Supabase)
+2. **Convidados entram** → Usam credenciais do host automaticamente
+3. **Busca e adição** → Via API do Spotify com credenciais compartilhadas
+4. **Controle de reprodução** → Comandos diretos para API do Spotify
+5. **Playlist de fallback** → Reprodução automática quando configurada
 
----
+## 🌐 Deploy
 
-## 🏗️ **Arquitetura do Sistema**
+Aplicação disponível em: [https://juke-6kjg5t9zo-ronald-melos-projects.vercel.app/](https://juke-6kjg5t9zo-ronald-melos-projects.vercel.app/)
 
-### **Fluxo Simplificado:**
-```
-Host → Login Spotify → Credenciais salvas no Supabase
-                           ↓
-Convidados → Código + Nome → Usam credenciais do host
-                           ↓
-Busca/Adiciona músicas → API Spotify com token do host
-```
+## 📝 Notas Importantes
 
-### **Estrutura do Banco (Supabase):**
-```sql
-parties {
-  id, code, name, host_id, host_name,
-  host_token, host_refresh_token, token_expires_at,
-  is_active, created_at, updated_at
-}
+- **Privacidade**: Convidados não têm acesso às credenciais do host
+- **Segurança**: Tokens são gerenciados automaticamente e renovados quando necessário
+- **Limitações**: Funciona apenas com Spotify Premium para o host
+- **Compatibilidade**: Testado em Chrome, Firefox, Safari e Edge
+- **Performance**: Busca AJAX em tempo real com debounce de 500ms
+- **Mobile**: Interface otimizada para dispositivos móveis
 
-guests {
-  id, name, party_id, created_at
-}
+## 🎵 Funcionalidades Avançadas
 
-tracks {
-  id, spotify_id, name, artist, album,
-  duration_ms, image_url, preview_url,
-  added_by, added_by_name, party_id, created_at
-}
-```
+### Playlist de Fallback
+- Configure uma playlist que toca automaticamente
+- Ideal para manter a festa animada quando ninguém adiciona músicas
+- Funciona com qualquer playlist pública ou própria do host
 
-### **Funções SQL Customizadas:**
-- `get_host_credentials(party_code)` - Busca credenciais do host
-- `update_host_token(party_code, new_token, expires_at)` - Atualiza tokens
+### Busca Inteligente
+- Busca em tempo real enquanto você digita
+- Resultados instantâneos da biblioteca completa do Spotify
+- Interface otimizada para mobile e desktop
 
----
+### Controle Simplificado
+- Foco total na experiência de adicionar músicas
+- Interface limpa sem elementos desnecessários
+- Feedback visual imediato ao adicionar músicas
 
-## 🎯 **Vantagens do Sistema Refatorado**
+## 🚀 Próximas Funcionalidades
 
-### **Antes (Web Playback SDK):**
-- ❌ Requeria Spotify Premium para host
-- ❌ Funcionava apenas no navegador específico
-- ❌ Complexo de configurar e manter
-- ❌ Convidados precisavam login individual
-- ❌ Limitado a um dispositivo
-
-### **Agora (API + Credenciais Compartilhadas):**
-- ✅ Funciona com Spotify Free
-- ✅ Controle remoto de qualquer dispositivo
-- ✅ 90% menos código e complexidade
-- ✅ Zero login para convidados
-- ✅ Sistema robusto e confiável
+- [ ] Votação em músicas da fila
+- [ ] Histórico de músicas tocadas
+- [ ] Temas personalizáveis
+- [ ] Integração com outras plataformas de música
 
 ---
 
-## 🚀 **Como Usar**
+Desenvolvido com ❤️ para festas mais divertidas e colaborativas!
 
-### **1. Acesse o App:**
-🔗 **https://juke-seven.vercel.app/**
-
-### **2. Como Host:**
-1. Clique em **"Entrar com Spotify"**
-2. Autorize o aplicativo
-3. Crie uma festa com nome
-4. Compartilhe o **código de 6 dígitos**
-5. Controle a reprodução no seu dispositivo Spotify
-
-### **3. Como Convidado:**
-1. Clique em **"Entrar em uma Festa"**
-2. Digite o **código** e seu **nome**
-3. Busque e adicione músicas
-4. Veja a fila atualizar em tempo real
-
----
-
-## 🔧 **Desenvolvimento Local**
-
-### **Pré-requisitos:**
-- Node.js 18+
-- Conta Spotify Developer
-- Projeto Supabase
-
-### **Configuração:**
-```bash
-# Clone o repositório
-git clone <repo-url>
-cd juke
-
-# Instale dependências
-npm install
-
-# Configure variáveis de ambiente (.env.local)
-VITE_SPOTIFY_CLIENT_ID=your_spotify_client_id
-VITE_SPOTIFY_REDIRECT_URI=https://your-domain.vercel.app/callback
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# Execute em desenvolvimento
-npm run dev
-
-# Build para produção
-npm run build
-
-# Deploy na Vercel
-vercel --prod
-```
-
-### **Configuração Spotify:**
-1. Acesse [Spotify for Developers](https://developer.spotify.com/dashboard)
-2. Crie um novo app
-3. Adicione redirect URI: `https://your-domain.vercel.app/callback`
-4. Copie Client ID para as variáveis de ambiente
-
-### **Configuração Supabase:**
-1. Execute o SQL de criação das tabelas
-2. Configure Row Level Security (RLS)
-3. Copie URL e chave anônima
-
----
-
-## 📊 **Monitoramento e Logs**
-
-### **Logs Importantes:**
-- ✅ `Credenciais do host salvas com sucesso`
-- 🔄 `Token expirando, renovando...`
-- ✅ `Token do host renovado com sucesso`
-- ✅ `Música adicionada à fila do host`
-
-### **Tratamento de Erros:**
-- 🔄 Auto-retry em falhas de rede
-- 🔄 Renovação automática de tokens expirados
-- ⚠️ Alertas claros para usuários
-- 📝 Logs detalhados para debugging
-
----
-
-## 🤝 **Contribuição**
-
-### **Como Contribuir:**
-1. Fork o projeto
-2. Crie uma branch para sua feature
-3. Commit suas mudanças
-4. Push para a branch
-5. Abra um Pull Request
-
-### **Padrões de Código:**
-- TypeScript obrigatório
-- Comentários em português brasileiro
-- Componentes funcionais com hooks
-- Tailwind CSS para estilização
-
----
-
-## 📄 **Licença**
-
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
-
----
-
-## 🎵 **Créditos**
-
-- **Spotify Web API** - Integração musical
-- **Supabase** - Backend e real-time
-- **Vercel** - Deploy e hosting
-- **React** + **TypeScript** - Frontend moderno
-
----
-
-**🎉 Feito com ❤️ para democratizar festas musicais colaborativas!**
+**Versão atual**: 2.0 - MVP com Playlist de Fallback
+**Última atualização**: Dezembro 2024
