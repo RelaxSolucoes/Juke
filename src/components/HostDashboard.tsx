@@ -65,6 +65,11 @@ export const HostDashboard: React.FC = () => {
   const [showEndPartyModal, setShowEndPartyModal] = useState(false);
   const [endingParty, setEndingParty] = useState(false);
 
+  // Novos estados para melhorar UX da playlist de fallback
+  const [fallbackPlaylistStatus, setFallbackPlaylistStatus] = useState<'idle' | 'starting' | 'playing'>('idle');
+  const [showSpotifyGuideModal, setShowSpotifyGuideModal] = useState(false);
+  const [fallbackPlaylistName, setFallbackPlaylistName] = useState<string>('');
+
   // Busca AJAX em tempo real
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -120,11 +125,34 @@ export const HostDashboard: React.FC = () => {
   };
 
   const handleStartFallbackPlaylist = async () => {
+    // Primeiro, mostrar o modal de orientação
+    setShowSpotifyGuideModal(true);
+  };
+
+  const confirmStartFallbackPlaylist = async () => {
+    setShowSpotifyGuideModal(false);
+    setFallbackPlaylistStatus('starting');
+    
     try {
       await startFallbackPlaylist();
-      alert('🎵 Playlist de fallback iniciada com sucesso!');
+      setFallbackPlaylistStatus('playing');
+      
+      // Buscar nome da playlist se disponível
+      if (currentParty) {
+        try {
+          const { getFallbackPlaylist } = await import('../utils/spotify');
+          const fallbackInfo = await getFallbackPlaylist(currentParty.code);
+          if (fallbackInfo) {
+            setFallbackPlaylistName(fallbackInfo.playlistName);
+          }
+        } catch (error) {
+          console.log('Não foi possível obter nome da playlist');
+        }
+      }
+      
     } catch (error) {
       console.error('Erro ao iniciar playlist:', error);
+      setFallbackPlaylistStatus('idle');
       
       // Mostrar mensagem de erro específica
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido ao iniciar playlist';
@@ -191,6 +219,11 @@ export const HostDashboard: React.FC = () => {
       setShowPlaylistSelector(false);
       setUserPlaylists([]);
       setShowEndPartyModal(false);
+      
+      // Resetar estados da playlist de fallback
+      setFallbackPlaylistStatus('idle');
+      setFallbackPlaylistName('');
+      setShowSpotifyGuideModal(false);
       
       // Pequeno delay para suavizar a transição
       setTimeout(() => {
@@ -457,15 +490,36 @@ export const HostDashboard: React.FC = () => {
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* Botão Playlist de Fallback */}
-              <button
-                onClick={handleStartFallbackPlaylist}
-                className="bg-green-500/20 hover:bg-green-500/30 text-green-300 px-4 py-2 rounded-xl transition-all flex items-center space-x-2 border border-green-500/30"
-                title="Iniciar playlist de fundo"
-              >
-                <Play className="w-4 h-4" />
-                <span>Playlist</span>
-              </button>
+              {/* Botão Playlist de Fallback - Estado Inteligente */}
+              {fallbackPlaylistStatus === 'idle' && (
+                <button
+                  onClick={handleStartFallbackPlaylist}
+                  className="bg-green-500/20 hover:bg-green-500/30 text-green-300 px-4 py-2 rounded-xl transition-all flex items-center space-x-2 border border-green-500/30"
+                  title="Iniciar playlist de fundo"
+                >
+                  <Play className="w-4 h-4" />
+                  <span className="hidden sm:inline">Playlist</span>
+                  <span className="sm:hidden">♪</span>
+                </button>
+              )}
+              
+              {fallbackPlaylistStatus === 'starting' && (
+                <div className="bg-yellow-500/20 text-yellow-300 px-4 py-2 rounded-xl flex items-center space-x-2 border border-yellow-500/30">
+                  <div className="w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="hidden sm:inline">Iniciando...</span>
+                  <span className="sm:hidden">⏳</span>
+                </div>
+              )}
+              
+              {fallbackPlaylistStatus === 'playing' && (
+                <div className="bg-green-500/30 text-green-200 px-4 py-2 rounded-xl flex items-center space-x-2 border border-green-400/50">
+                  <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="hidden sm:inline">
+                    {fallbackPlaylistName ? `♪ ${fallbackPlaylistName}` : '♪ Tocando'}
+                  </span>
+                  <span className="sm:hidden">♪</span>
+                </div>
+              )}
 
               {/* Código da Festa */}
               <div className="bg-white/10 rounded-xl px-4 py-2 border border-white/20">
@@ -511,7 +565,7 @@ export const HostDashboard: React.FC = () => {
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center justify-center">
                   <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-yellow-400" />
-                  Busca Musical Premium
+                  Juke Party
                   <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 ml-2 text-yellow-400" />
                 </h2>
                 <p className="text-purple-200 text-sm sm:text-base">
@@ -718,6 +772,96 @@ export const HostDashboard: React.FC = () => {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Orientação para Spotify */}
+      {showSpotifyGuideModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gradient-to-br from-purple-900/95 to-blue-900/95 backdrop-blur-xl rounded-3xl p-6 sm:p-8 border border-white/20 shadow-2xl max-w-md w-full animate-slide-up">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Music className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                🎵 Iniciar Playlist de Fundo
+              </h3>
+              <p className="text-purple-200 text-sm">
+                Antes de continuar, siga estas instruções:
+              </p>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div className="bg-white/10 rounded-xl p-4 border border-white/20">
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-sm font-bold">1</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">Abra o Spotify</p>
+                    <p className="text-purple-200 text-xs">
+                      Abra o aplicativo Spotify no dispositivo onde a música será tocada (celular, computador, TV, etc.)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 rounded-xl p-4 border border-white/20">
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-sm font-bold">2</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">Certifique-se que está logado</p>
+                    <p className="text-purple-200 text-xs">
+                      Use a mesma conta que criou esta festa
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/10 rounded-xl p-4 border border-white/20">
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-sm font-bold">3</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">Toque qualquer música</p>
+                    <p className="text-purple-200 text-xs">
+                      Isso ativa o dispositivo para receber comandos remotos
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-yellow-500/20 border border-yellow-400/50 rounded-xl p-4 mb-6">
+              <div className="flex items-start space-x-2">
+                <div className="text-yellow-400 mt-0.5">⚠️</div>
+                <div>
+                  <p className="text-yellow-200 text-sm font-medium">Importante:</p>
+                  <p className="text-yellow-200 text-xs">
+                    O Juke funciona como um "controle remoto" do Spotify. A música tocará no dispositivo que você abriu o Spotify, não no navegador.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowSpotifyGuideModal(false)}
+                className="flex-1 bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl transition-all border border-white/20"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmStartFallbackPlaylist}
+                className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-4 py-3 rounded-xl transition-all font-medium"
+              >
+                ✅ Entendi, Iniciar!
+              </button>
             </div>
           </div>
         </div>

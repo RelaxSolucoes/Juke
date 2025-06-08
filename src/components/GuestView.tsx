@@ -184,7 +184,7 @@ export const GuestView: React.FC = () => {
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center justify-center">
                   <Heart className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-pink-400" />
-                  Adicione Suas Músicas
+                  Juke Party
                   <Heart className="w-5 h-5 sm:w-6 sm:h-6 ml-2 text-pink-400" />
                 </h2>
                 <p className="text-purple-200 text-sm sm:text-base">
@@ -203,8 +203,8 @@ export const GuestView: React.FC = () => {
                       Você é o DJ! ✨
                     </h3>
                     <p className="text-pink-200/80 text-sm sm:text-base">
-                      Busque e adicione músicas á fila!
-                      Suas músicas serão adicionadas automaticamente! 🚀
+                      Seu pedido é uma ordem!
+                      Escolheu, entrou na fila, tocou!🚀
                     </p>
                   </div>
                 </div>
