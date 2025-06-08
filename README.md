@@ -179,7 +179,22 @@ CREATE POLICY "Allow all operations on parties" ON parties FOR ALL USING (true);
 CREATE POLICY "Allow all operations on guests" ON guests FOR ALL USING (true);
 ```
 
-## 🔧 Correções Recentes (v2.1.3)
+## 🔧 Correções Recentes (v2.4.0)
+
+### ✅ Verificação Inteligente de Dispositivos
+- **Verificação Automática:** Sistema verifica dispositivos Spotify ativos antes de qualquer ação
+- **API Oficial:** Implementado baseado na documentação oficial do Spotify Web API
+- **Botão Corrigido:** "Iniciar Festa" substitui o confuso botão "Playlist"
+- **Modal Educativo:** Guia passo-a-passo para ativar dispositivos Spotify
+- **Mensagens Específicas:** Erros claros baseados no estado real dos dispositivos
+- **Status em Tempo Real:** Mostra dispositivos disponíveis, ativos e suas informações
+
+### 🧹 Limpeza de UX
+- **Componentes Removidos:** OnboardingGuide, HostCallToAction, GuestWelcome, etc.
+- **Abordagem Simplificada:** Foco na verificação técnica real ao invés de tutoriais
+- **Interface Limpa:** Removida poluição visual de componentes desnecessários
+
+## 🔧 Correções Anteriores (v2.1.3)
 
 ### ✅ Problemas Corrigidos
 - **OAuth Spotify:** Corrigido erro "invalid_grant" ao fazer login
@@ -231,13 +246,19 @@ CREATE POLICY "Allow all operations on guests" ON guests FOR ALL USING (true);
 
 ## 📈 Melhorias Recentes
 
-### v2.3.0 - UX Intuitiva e Auto-Explicativa
-- ✅ **Onboarding Interativo:** Tutorial passo-a-passo para novos usuários
-- ✅ **Host Call-to-Action:** Guia visual claro para configurar festa
-- ✅ **Guest Welcome:** Boas-vindas explicativas para convidados
-- ✅ **Progress Tracking:** Barras de progresso e status visual
-- ✅ **Interface Auto-Explicativa:** Baseada em padrões de apps populares
-- ✅ **Menos Confusão:** Usuários sabem exatamente o que fazer
+### v2.4.0 - Verificação Inteligente de Dispositivos Spotify
+- ✅ **Verificação de Dispositivos:** Sistema baseado na API oficial do Spotify
+- ✅ **Botão "Iniciar Festa":** Substitui o confuso botão "Playlist" 
+- ✅ **Modal de Orientação:** Guia passo-a-passo para ativar dispositivos Spotify
+- ✅ **Verificação Automática:** Antes de iniciar festa ou adicionar músicas
+- ✅ **Status em Tempo Real:** Mostra dispositivos disponíveis e ativos
+- ✅ **Mensagens Específicas:** Erros claros baseados no estado real dos dispositivos
+- ✅ **UX Simplificada:** Removidos componentes de onboarding complexos
+
+### v2.3.0 - UX Intuitiva e Auto-Explicativa (Removida)
+- ❌ **Componentes Removidos:** OnboardingGuide, HostCallToAction, GuestWelcome
+- ❌ **Abordagem Complexa:** Substituída por verificação técnica real
+- ✅ **Aprendizado:** Implementação baseada em documentação oficial do Spotify
 
 ### v2.2.0 - Sistema Híbrido Free + Premium
 - ✅ **Arquitetura Híbrida:** Sistema Free (atual) + Premium (futuro) implementado
