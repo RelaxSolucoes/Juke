@@ -1,0 +1,35 @@
+# 🎯 Escopo do Projeto - Juke
+
+## Objetivo
+Criar um app de festas musicais colaborativas com integração ao Spotify e backend via Supabase.
+
+## Funcionalidades Implementadas
+- Criação e entrada em festas
+- Adição de músicas em tempo real
+- Autenticação via Spotify
+- Interface mobile responsiva
+- Deploy via Vercel
+
+## O que não deve ser alterado sem autorização:
+- Estrutura de tabelas no Supabase já existente
+- Fluxo de login e autenticação
+- Estilização Tailwind principal
+- Hooks customizados em `hooks/`
+- Arquivos `supabase.ts` e `spotify.ts`
+
+## Tecnologias que devem ser mantidas:
+- React + TypeScript + Vite
+- Tailwind CSS
+- Supabase
+- Spotify Web API
+- Deploy na Vercel
+
+## Restrições técnicas:
+- Projeto só pode ser testado via HTTPS (não usar localhost)
+- Todo deploy deve ser feito com `vercel --prod`
+- Após qualquer mudança, atualizar o `README.md` e realizar commit
+
+
+
+
+📌 Todas as instruções específicas estão descritas no arquivo .cursor/rules. Este escopo respeita e complementa essas regras.

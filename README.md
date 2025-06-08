@@ -46,7 +46,7 @@ Uma aplicação moderna para criar festas musicais colaborativas usando o Spotif
 - **Styling:** Tailwind CSS
 - **Build:** Vite
 - **Backend:** Supabase (Real-time Database)
-- **API:** Spotify Web API + Web Playback SDK
+- **API:** Spotify Web API (controle remoto)
 - **Deploy:** Vercel
 - **Testes:** Vitest + Testing Library
 
@@ -194,10 +194,18 @@ CREATE POLICY "Allow all operations on tracks" ON tracks FOR ALL USING (true);
 
 ## 📊 Funcionalidades Técnicas
 
+### 🎵 Como Funciona a Reprodução
+- **Playlist de Fallback:** Host inicia uma playlist automática no Spotify
+- **Adição de Músicas:** Convidados adicionam músicas à fila nativa do Spotify via API
+- **Controle Remoto:** App controla dispositivos Spotify existentes (celular, desktop, etc.)
+- **Histórico:** Supabase armazena quais músicas foram adicionadas (não gerencia reprodução)
+- **Dependência:** Requer dispositivo Spotify ativo e conta Premium
+
 ### 🔄 Real-time
 - Sincronização em tempo real via Supabase
 - Atualizações automáticas da lista de convidados
-- Fila de músicas atualizada instantaneamente
+- Histórico de músicas adicionadas atualizado instantaneamente
+- Reprodução gerenciada pelo Spotify (fila nativa)
 
 ### 🛡️ Segurança
 - Validação e sanitização de dados
@@ -218,6 +226,12 @@ CREATE POLICY "Allow all operations on tracks" ON tracks FOR ALL USING (true);
 - Error handling robusto
 
 ## 📈 Melhorias Recentes
+
+### v2.1.2 - Correção de Documentação
+- ✅ **Documentação corrigida:** Descrição técnica agora reflete a realidade do sistema
+- ✅ Esclarecido que usa Spotify Web API (não Web Playback SDK)
+- ✅ Explicado que reprodução é gerenciada pelo Spotify (não app)
+- ✅ Histórico vs fila: Supabase armazena histórico, Spotify gerencia reprodução
 
 ### v2.1.1 - Correção de Acentos
 - ✅ **Correção crítica:** Nomes com acentos agora são preservados corretamente
