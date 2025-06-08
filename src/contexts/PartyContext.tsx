@@ -387,10 +387,33 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
       const fallbackPlaylist = await getFallbackPlaylist(currentParty.code);
       
       if (!fallbackPlaylist) {
-        throw new Error('Nenhuma playlist de fallback configurada para esta festa. Configure uma playlist na criação da festa.');
+        // Se não tem playlist configurada, vamos buscar uma playlist do usuário
+        console.log('⚠️ Nenhuma playlist configurada, buscando playlists do usuário...');
+        
+        if (!user?.access_token) {
+          throw new Error('Usuário não autenticado');
+        }
+
+        const userPlaylists = await getUserPlaylists(user.access_token);
+        
+        if (userPlaylists.length === 0) {
+          throw new Error('Você não tem playlists no Spotify. Crie uma playlist primeiro ou adicione músicas manualmente.');
+        }
+
+        // Usar a primeira playlist encontrada
+        const firstPlaylist = userPlaylists[0];
+        console.log('🎵 Usando primeira playlist encontrada:', firstPlaylist.name);
+        
+        // Salvar essa playlist como fallback para próximas vezes
+        await saveFallbackPlaylistFunc(firstPlaylist);
+        
+        // Iniciar a playlist
+        await startPlaylistPlayback(firstPlaylist.uri, currentParty.code);
+        console.log('✅ Playlist iniciada:', firstPlaylist.name);
+        return;
       }
 
-      console.log('🎵 Iniciando playlist:', fallbackPlaylist.playlistName);
+      console.log('🎵 Iniciando playlist configurada:', fallbackPlaylist.playlistName);
       await startPlaylistPlayback(fallbackPlaylist.playlistUri, currentParty.code);
       console.log('✅ Playlist de fallback iniciada:', fallbackPlaylist.playlistName);
     } catch (error) {

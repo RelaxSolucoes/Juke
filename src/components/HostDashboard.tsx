@@ -32,13 +32,12 @@ import { usePlan } from '../contexts/PlanContext';
 import { formatDuration } from '../utils/spotify';
 import { NowPlaying } from './NowPlaying';
 import { PremiumUpgrade } from './PremiumUpgrade';
-import { OnboardingGuide, useOnboarding } from './OnboardingGuide';
-import { HostCallToAction } from './HostCallToAction';
+import { SimpleHostGuide } from './SimpleHostGuide';
 
 export const HostDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
   const { isPremium } = usePlan();
-  const { showOnboarding } = useOnboarding('host');
+
   const { 
     currentParty, 
     queue, 
@@ -143,12 +142,6 @@ export const HostDashboard: React.FC = () => {
   };
 
   const handleStartFallbackPlaylist = async () => {
-    // Primeiro, mostrar o modal de orientação
-    setShowSpotifyGuideModal(true);
-  };
-
-  const confirmStartFallbackPlaylist = async () => {
-    setShowSpotifyGuideModal(false);
     setFallbackPlaylistStatus('starting');
     
     try {
@@ -623,13 +616,13 @@ export const HostDashboard: React.FC = () => {
           <PremiumUpgrade feature="funcionalidades avançadas" />
         )}
 
-        {/* Host Call to Action */}
-        <HostCallToAction
+        {/* Simple Host Guide */}
+        <SimpleHostGuide
           onStartPlaylist={handleStartFallbackPlaylist}
-          onOpenShareModal={openShareModal}
           hasStartedPlaylist={fallbackPlaylistStatus === 'playing'}
           guestCount={guests.length}
           partyCode={currentParty?.code || ''}
+          partyName={currentParty?.name || ''}
         />
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
@@ -856,94 +849,7 @@ export const HostDashboard: React.FC = () => {
       )}
 
       {/* Modal de Orientação para Spotify */}
-      {showSpotifyGuideModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-gradient-to-br from-purple-900/95 to-blue-900/95 backdrop-blur-xl rounded-3xl p-6 sm:p-8 border border-white/20 shadow-2xl max-w-md w-full animate-slide-up">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Music className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-2">
-                🎵 Iniciar Playlist de Fundo
-              </h3>
-              <p className="text-purple-200 text-sm">
-                Antes de continuar, siga estas instruções:
-              </p>
-            </div>
 
-            <div className="space-y-4 mb-6">
-              <div className="bg-white/10 rounded-xl p-4 border border-white/20">
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-white text-sm font-bold">1</span>
-                  </div>
-                  <div>
-                    <p className="text-white font-medium text-sm">Abra o Spotify</p>
-                    <p className="text-purple-200 text-xs">
-                      Abra o aplicativo Spotify no dispositivo onde a música será tocada (celular, computador, TV, etc.)
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 rounded-xl p-4 border border-white/20">
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-white text-sm font-bold">2</span>
-                  </div>
-                  <div>
-                    <p className="text-white font-medium text-sm">Certifique-se que está logado</p>
-                    <p className="text-purple-200 text-xs">
-                      Use a mesma conta que criou esta festa
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white/10 rounded-xl p-4 border border-white/20">
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-white text-sm font-bold">3</span>
-                  </div>
-                  <div>
-                    <p className="text-white font-medium text-sm">Toque qualquer música</p>
-                    <p className="text-purple-200 text-xs">
-                      Isso ativa o dispositivo para receber comandos remotos
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-yellow-500/20 border border-yellow-400/50 rounded-xl p-4 mb-6">
-              <div className="flex items-start space-x-2">
-                <div className="text-yellow-400 mt-0.5">⚠️</div>
-                <div>
-                  <p className="text-yellow-200 text-sm font-medium">Importante:</p>
-                  <p className="text-yellow-200 text-xs">
-                    O Juke funciona como um "controle remoto" do Spotify. A música tocará no dispositivo que você abriu o Spotify, não no navegador.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowSpotifyGuideModal(false)}
-                className="flex-1 bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl transition-all border border-white/20"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={confirmStartFallbackPlaylist}
-                className="flex-1 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-4 py-3 rounded-xl transition-all font-medium"
-              >
-                ✅ Entendi, Iniciar!
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal de Compartilhamento */}
       {showShareModal && (
