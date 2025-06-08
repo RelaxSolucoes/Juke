@@ -18,8 +18,14 @@ import {
   LogOut,
   Sparkles,
   Zap,
-  Heart
+  Heart,
+  Share2,
+  QrCode,
+  Download,
+  Link,
+  MessageCircle
 } from 'lucide-react';
+import QRCode from 'qrcode';
 import { useAuth } from '../contexts/AuthContext';
 import { useParty } from '../contexts/PartyContext';
 import { formatDuration } from '../utils/spotify';
@@ -69,6 +75,12 @@ export const HostDashboard: React.FC = () => {
   const [fallbackPlaylistStatus, setFallbackPlaylistStatus] = useState<'idle' | 'starting' | 'playing'>('idle');
   const [showSpotifyGuideModal, setShowSpotifyGuideModal] = useState(false);
   const [fallbackPlaylistName, setFallbackPlaylistName] = useState<string>('');
+  
+  // Estados para modal de compartilhamento
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+  const [shareUrl, setShareUrl] = useState<string>('');
+  const [linkCopied, setLinkCopied] = useState(false);
 
   // Busca AJAX em tempo real
   useEffect(() => {
@@ -166,6 +178,60 @@ export const HostDashboard: React.FC = () => {
       setCodeCopied(true);
       setTimeout(() => setCodeCopied(false), 2000);
     }
+  };
+
+  // Funções do modal de compartilhamento
+  const openShareModal = async () => {
+    if (!currentParty) return;
+    
+    // Gerar URL de compartilhamento
+    const baseUrl = window.location.origin;
+    const url = `${baseUrl}?code=${currentParty.code}`;
+    setShareUrl(url);
+    
+    try {
+      // Gerar QR Code
+      const qrDataUrl = await QRCode.toDataURL(url, {
+        width: 256,
+        margin: 2,
+        color: {
+          dark: '#1f2937', // Cor escura
+          light: '#ffffff' // Cor clara
+        }
+      });
+      setQrCodeDataUrl(qrDataUrl);
+    } catch (error) {
+      console.error('Erro ao gerar QR Code:', error);
+    }
+    
+    setShowShareModal(true);
+  };
+
+  const copyShareLink = async () => {
+    await navigator.clipboard.writeText(shareUrl);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const downloadQRCode = () => {
+    if (!qrCodeDataUrl || !currentParty) return;
+    
+    const link = document.createElement('a');
+    link.download = `festa-${currentParty.code}-qrcode.png`;
+    link.href = qrCodeDataUrl;
+    link.click();
+  };
+
+  const shareViaWhatsApp = () => {
+    const message = `🎵 Você foi convidado para a festa "${currentParty?.name}"!\n\nEntre agora: ${shareUrl}\n\nOu use o código: ${currentParty?.code}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const shareViaTelegram = () => {
+    const message = `🎵 Festa "${currentParty?.name}" - Entre agora: ${shareUrl}`;
+    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(message)}`;
+    window.open(telegramUrl, '_blank');
   };
 
   const handleAddToQueue = async (track: any) => {
@@ -445,15 +511,11 @@ export const HostDashboard: React.FC = () => {
                     <code className="text-white font-mono text-sm truncate">{currentParty?.code}</code>
                   </div>
                   <button
-                    onClick={copyPartyCode}
+                    onClick={openShareModal}
                     className="p-1 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0"
-                    title="Copiar código"
+                    title="Compartilhar festa"
                   >
-                    {codeCopied ? (
-                      <Check className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <Copy className="w-4 h-4 text-purple-300" />
-                    )}
+                    <Share2 className="w-4 h-4 text-purple-300" />
                   </button>
                 </div>
               </div>
@@ -527,15 +589,11 @@ export const HostDashboard: React.FC = () => {
                   <span className="text-purple-200 text-sm">Código:</span>
                   <code className="text-white font-mono text-lg">{currentParty?.code}</code>
                   <button
-                    onClick={copyPartyCode}
+                    onClick={openShareModal}
                     className="p-1 hover:bg-white/20 rounded-lg transition-colors"
-                    title="Copiar código"
+                    title="Compartilhar festa"
                   >
-                    {codeCopied ? (
-                      <Check className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <Copy className="w-4 h-4 text-purple-300" />
-                    )}
+                    <Share2 className="w-4 h-4 text-purple-300" />
                   </button>
                 </div>
               </div>
@@ -862,6 +920,131 @@ export const HostDashboard: React.FC = () => {
               >
                 ✅ Entendi, Iniciar!
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Compartilhamento */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gradient-to-br from-purple-900/95 to-blue-900/95 backdrop-blur-xl rounded-3xl p-6 sm:p-8 border border-white/20 shadow-2xl max-w-lg w-full animate-slide-up">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                  <Share2 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Compartilhar Festa</h3>
+                  <p className="text-purple-200 text-sm">{currentParty?.name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            {/* Código da Festa */}
+            <div className="bg-white/10 rounded-xl p-4 mb-6 border border-white/20">
+              <div className="text-center">
+                <p className="text-purple-200 text-sm mb-2">Código da Festa</p>
+                <div className="flex items-center justify-center space-x-3">
+                  <code className="text-white font-mono text-2xl font-bold">{currentParty?.code}</code>
+                  <button
+                    onClick={copyPartyCode}
+                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                    title="Copiar código"
+                  >
+                    {codeCopied ? (
+                      <Check className="w-5 h-5 text-green-400" />
+                    ) : (
+                      <Copy className="w-5 h-5 text-purple-300" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* QR Code */}
+            {qrCodeDataUrl && (
+              <div className="bg-white rounded-xl p-4 mb-6 text-center">
+                <p className="text-gray-700 text-sm mb-3 font-medium">QR Code da Festa</p>
+                <div className="flex justify-center mb-4">
+                  <img 
+                    src={qrCodeDataUrl} 
+                    alt="QR Code da festa" 
+                    className="w-48 h-48 rounded-lg"
+                  />
+                </div>
+                <button
+                  onClick={downloadQRCode}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-lg transition-all flex items-center space-x-2 mx-auto"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Baixar QR Code</span>
+                </button>
+              </div>
+            )}
+
+            {/* Link de Compartilhamento */}
+            <div className="bg-white/10 rounded-xl p-4 mb-6 border border-white/20">
+              <p className="text-purple-200 text-sm mb-3">Link Direto</p>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={shareUrl}
+                  readOnly
+                  className="flex-1 bg-white/20 border border-white/30 rounded-lg px-3 py-2 text-white text-sm font-mono"
+                />
+                <button
+                  onClick={copyShareLink}
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0"
+                  title="Copiar link"
+                >
+                  {linkCopied ? (
+                    <Check className="w-5 h-5 text-green-400" />
+                  ) : (
+                    <Copy className="w-5 h-5 text-purple-300" />
+                  )}
+                </button>
+              </div>
+              <p className="text-purple-300 text-xs mt-2">
+                💡 O convidado só precisa inserir o nome e entrar!
+              </p>
+            </div>
+
+            {/* Botões de Compartilhamento Social */}
+            <div className="space-y-3">
+              <p className="text-purple-200 text-sm font-medium">Compartilhar via:</p>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={shareViaWhatsApp}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-xl transition-all flex items-center justify-center space-x-2"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>WhatsApp</span>
+                </button>
+                
+                <button
+                  onClick={shareViaTelegram}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl transition-all flex items-center justify-center space-x-2"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>Telegram</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Dica */}
+            <div className="mt-6 p-4 bg-blue-500/20 border border-blue-400/30 rounded-xl">
+              <p className="text-blue-200 text-sm">
+                <strong>💡 Dica:</strong> Seus convidados podem usar o QR Code, o link direto ou apenas digitar o código da festa!
+              </p>
             </div>
           </div>
         </div>

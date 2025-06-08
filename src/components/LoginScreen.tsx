@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Music, Users, Play, Plus } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useParty } from '../contexts/PartyContext';
@@ -14,6 +14,21 @@ export const LoginScreen: React.FC = () => {
   const [isJoining, setIsJoining] = useState(false);
   const [nameError, setNameError] = useState('');
   const [codeError, setCodeError] = useState('');
+
+  // Verificar se há código na URL ao carregar
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const codeFromUrl = urlParams.get('code');
+    
+    if (codeFromUrl && validatePartyCode(codeFromUrl)) {
+      setPartyCode(codeFromUrl.toUpperCase());
+      setShowGuestForm(true); // Ir direto para o formulário de convidado
+      
+      // Limpar a URL sem recarregar a página
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, []);
 
   const handleGuestNameChange = (value: string) => {
     setGuestName(value);
