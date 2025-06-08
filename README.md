@@ -219,6 +219,12 @@ CREATE POLICY "Allow all operations on tracks" ON tracks FOR ALL USING (true);
 
 ## 📈 Melhorias Recentes
 
+### v2.1.1 - Correção de Acentos
+- ✅ **Correção crítica:** Nomes com acentos agora são preservados corretamente
+- ✅ Suporte completo a caracteres especiais do português (á, é, ç, ã, etc.)
+- ✅ Validação aprimorada mantendo segurança contra XSS
+- ✅ Banco de dados limpo e otimizado (remoção de tabelas desnecessárias)
+
 ### v2.1.0 - Responsividade Mobile
 - ✅ Cabeçalho otimizado para mobile
 - ✅ Layout adaptativo em duas linhas

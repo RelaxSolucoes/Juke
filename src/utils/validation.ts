@@ -20,12 +20,13 @@ const LIMITS = {
 
 /**
  * Sanitize string input by removing dangerous characters
+ * Preserva acentos e caracteres especiais do português
  */
 export const sanitizeString = (input: string): string => {
   return input
     .trim()
     .replace(/[<>]/g, '') // Remove potential HTML tags
-    .replace(/[^\w\s\-_.!?@#$%&*()+=]/g, '') // Keep only safe characters
+    .replace(/[^\w\s\-_.!?@#$%&*()+=àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞŸ]/g, '') // Keep safe characters + acentos
     .substring(0, 500); // Limit length
 };
 

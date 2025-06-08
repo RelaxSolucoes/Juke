@@ -17,8 +17,8 @@ IMPORTANTE:
 
 - Esse projeto não pode ser testado localhost, devido á falta de https
 - Toda mudança no código exige deploy na Vercel via: vercel --prod
-- Todo deply gera um url tipo: https://juke-lgd6uf4r3-ronald-melos-projects.vercel.app
-- Nosso projeto está em: https://juke-seven.vercel.app/
+- Todo deploy gera um url exemplo: https://juke-lgd6uf4r3-ronald-melos-projects.vercel.app (isso é temporário)
+- Nosso projeto está em: https://juke-seven.vercel.app/ (permanente)
 - Sempre que adicionar um debug, lembre-se de remover depois de solucionado para manter o app limpo.
 - Sempre apague os arquivos .md não utilizados. Deixe somente 1 para Read.me
 
