@@ -17,7 +17,8 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useParty } from '../contexts/PartyContext';
 import { formatDuration } from '../utils/spotify';
-import { SimpleGuestWelcome } from './SimpleGuestWelcome';
+import { MinimalTip } from './MinimalTip';
+
 
 export const GuestView: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -214,12 +215,8 @@ export const GuestView: React.FC = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Simple Guest Welcome */}
-        <SimpleGuestWelcome
-          partyName={currentParty.name}
-          hostName={currentParty.host?.name || 'Host'}
-          guestCount={guests.length}
-        />
+        {/* Dica Minimalista */}
+        <MinimalTip type="guest" />
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Busca Premium - Área Principal */}

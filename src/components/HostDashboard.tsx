@@ -28,15 +28,14 @@ import {
 import QRCode from 'qrcode';
 import { useAuth } from '../contexts/AuthContext';
 import { useParty } from '../contexts/PartyContext';
-import { usePlan } from '../contexts/PlanContext';
 import { formatDuration } from '../utils/spotify';
 import { NowPlaying } from './NowPlaying';
-import { PremiumUpgrade } from './PremiumUpgrade';
-import { SimpleHostGuide } from './SimpleHostGuide';
+
+import { MinimalTip } from './MinimalTip';
+
 
 export const HostDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
-  const { isPremium } = usePlan();
 
   const { 
     currentParty, 
@@ -611,19 +610,8 @@ export const HostDashboard: React.FC = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Banner Premium */}
-        {!isPremium && (
-          <PremiumUpgrade feature="funcionalidades avançadas" />
-        )}
-
-        {/* Simple Host Guide */}
-        <SimpleHostGuide
-          onStartPlaylist={handleStartFallbackPlaylist}
-          hasStartedPlaylist={fallbackPlaylistStatus === 'playing'}
-          guestCount={guests.length}
-          partyCode={currentParty?.code || ''}
-          partyName={currentParty?.name || ''}
-        />
+        {/* Dica Minimalista */}
+        <MinimalTip type="host" />
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Busca Premium - Área Principal */}
