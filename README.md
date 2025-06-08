@@ -179,9 +179,17 @@ CREATE POLICY "Allow all operations on parties" ON parties FOR ALL USING (true);
 CREATE POLICY "Allow all operations on guests" ON guests FOR ALL USING (true);
 ```
 
-## 🔧 Correções Recentes (v2.4.1)
+## 🔧 Melhorias Recentes (v2.5.0)
 
-### ✅ Correções Críticas
+### 🚀 Auto-Start Inteligente do Spotify
+- **Abre Spotify Automaticamente:** Sistema detecta dispositivo e abre app/web conforme necessário
+- **Play Automático:** Dá play na playlist (se configurada) ou música atual do Spotify
+- **UX Revolucionária:** Removido modal gigante - experiência direta e fluida
+- **Multiplataforma:** Funciona perfeitamente em Android, iOS, Desktop e Web
+- **Retry Inteligente:** Se primeira tentativa falha, abre Spotify e tenta novamente
+- **Zero Configuração:** Usuário clica "Iniciar Festa" e tudo funciona magicamente
+
+### ✅ Correções Críticas (v2.4.1)
 - **SDK Residual Eliminado:** Removido "Juke Party Player" fake do Web Playback SDK
 - **Playlist Realmente Opcional:** Festa pode iniciar sem playlist de fundo configurada
 - **Limpeza Completa:** Removidos tipos, mocks e resíduos do Web Playback SDK
@@ -252,6 +260,14 @@ CREATE POLICY "Allow all operations on guests" ON guests FOR ALL USING (true);
 - Error handling robusto
 
 ## 📈 Melhorias Recentes
+
+### v2.5.0 - Auto-Start Inteligente do Spotify 🚀
+- ✅ **Abre Spotify Automaticamente:** Detecta dispositivo e abre app/web conforme necessário
+- ✅ **Play Automático:** Dá play na playlist (se selecionada) ou música atual do Spotify
+- ✅ **UX Fluida:** Sem modais gigantes - experiência direta e simples
+- ✅ **Multiplataforma:** Funciona em Android, iOS, Desktop e Web
+- ✅ **Retry Inteligente:** Se falha, abre Spotify e tenta novamente automaticamente
+- ✅ **Zero Configuração:** Usuário só clica "Iniciar Festa" e tudo funciona
 
 ### v2.4.1 - Correções Críticas de SDK e Playlist Opcional
 - ✅ **SDK Residual Removido:** Eliminado "Juke Party Player" fake do Web Playback SDK

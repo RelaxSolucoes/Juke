@@ -32,8 +32,7 @@ import { formatDuration } from '../utils/spotify';
 import { NowPlaying } from './NowPlaying';
 
 import { MinimalTip } from './MinimalTip';
-import { DeviceStatus } from './DeviceStatus';
-import { hasActiveDevice } from '../utils/spotifyDevices';
+import { autoStartSpotify } from '../utils/spotifyAutoStart';
 
 
 export const HostDashboard: React.FC = () => {
@@ -82,9 +81,7 @@ export const HostDashboard: React.FC = () => {
   const [showSpotifyGuideModal, setShowSpotifyGuideModal] = useState(false);
   const [fallbackPlaylistName, setFallbackPlaylistName] = useState<string>('');
   
-  // Estados para verificação de dispositivos
-  const [deviceReady, setDeviceReady] = useState(false);
-  const [showDeviceCheck, setShowDeviceCheck] = useState(false);
+  // Estados removidos - agora usa auto-start do Spotify
   
   // Estados para modal de compartilhamento
   const [showShareModal, setShowShareModal] = useState(false);
@@ -147,51 +144,49 @@ export const HostDashboard: React.FC = () => {
   };
 
   const handleStartParty = async () => {
-    // Primeiro verificar se há dispositivo ativo
     if (!user?.access_token) {
       alert('❌ Erro de autenticação. Faça login novamente.');
-      return;
-    }
-
-    // Verificar dispositivos antes de iniciar
-    const hasDevice = await hasActiveDevice(user.access_token);
-    if (!hasDevice) {
-      setShowDeviceCheck(true);
       return;
     }
 
     setFallbackPlaylistStatus('starting');
     
     try {
-      await startFallbackPlaylist();
-      setFallbackPlaylistStatus('playing');
-      
-      // Buscar nome da playlist se disponível
+      // Buscar playlist se configurada
+      let playlistUri: string | undefined;
       if (currentParty) {
         try {
           const { getFallbackPlaylist } = await import('../utils/spotify');
           const fallbackInfo = await getFallbackPlaylist(currentParty.code);
           if (fallbackInfo) {
+            playlistUri = fallbackInfo.playlistUri;
             setFallbackPlaylistName(fallbackInfo.playlistName);
           }
         } catch (error) {
-          console.log('Não foi possível obter nome da playlist');
+          console.log('Nenhuma playlist configurada - iniciando sem playlist');
         }
+      }
+
+      // Auto-start: abre Spotify se necessário e dá play
+      const success = await autoStartSpotify(user.access_token, playlistUri);
+      
+      if (success) {
+        setFallbackPlaylistStatus('playing');
+        console.log('✅ Festa iniciada com sucesso!');
+      } else {
+        throw new Error('Não foi possível iniciar o Spotify. Tente abrir o Spotify manualmente.');
       }
       
     } catch (error) {
       console.error('Erro ao iniciar festa:', error);
       setFallbackPlaylistStatus('idle');
       
-      // Mostrar mensagem de erro específica
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido ao iniciar festa';
       alert(`❌ ${errorMessage}`);
     }
   };
 
-  const handleDeviceReady = (ready: boolean) => {
-    setDeviceReady(ready);
-  };
+  // Função removida - não mais necessária com auto-start
 
   const copyPartyCode = async () => {
     if (currentParty) {
@@ -256,15 +251,8 @@ export const HostDashboard: React.FC = () => {
   };
 
   const handleAddToQueue = async (track: any) => {
-    // Verificar dispositivo antes de adicionar música
     if (!user?.access_token) {
       alert('❌ Erro de autenticação. Faça login novamente.');
-      return;
-    }
-
-    const hasDevice = await hasActiveDevice(user.access_token);
-    if (!hasDevice) {
-      alert('❌ Nenhum dispositivo Spotify ativo encontrado. Abra o Spotify em qualquer dispositivo e toque uma música primeiro.');
       return;
     }
 
@@ -272,7 +260,7 @@ export const HostDashboard: React.FC = () => {
     setAddedTracks(prev => new Set([...prev, track.id]));
     
     try {
-      // Adicionar direto ao Spotify (sem Supabase por enquanto)
+      // Adicionar direto ao Spotify
       await addTrackToQueue(track, user?.name);
       
       console.log('✅ Música adicionada com sucesso:', track.name);
@@ -295,10 +283,12 @@ export const HostDashboard: React.FC = () => {
         return newSet;
       });
       
-      // Mostrar erro específico baseado no tipo
+      // Se erro de dispositivo, tenta abrir Spotify automaticamente
       const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-      if (errorMessage.includes('No active device')) {
-        alert('❌ Nenhum dispositivo Spotify ativo. Abra o Spotify e toque uma música primeiro.');
+      if (errorMessage.includes('No active device') || errorMessage.includes('404')) {
+        alert('❌ Abrindo Spotify... Tente adicionar a música novamente em alguns segundos.');
+        const { openSpotifyApp } = await import('../utils/spotifyAutoStart');
+        openSpotifyApp();
       } else {
         alert(`❌ Erro ao adicionar música: ${errorMessage}`);
       }
@@ -1004,100 +994,7 @@ export const HostDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de Verificação de Dispositivos */}
-      {showDeviceCheck && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20 shadow-2xl max-w-2xl w-full animate-scale-up">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Smartphone className="w-8 h-8 text-red-400" />
-              </div>
-              
-              <h3 className="text-2xl font-bold text-white mb-2">
-                ⚠️ Dispositivo Spotify Necessário
-              </h3>
-              
-              <p className="text-red-200 mb-6">
-                Para iniciar a festa, você precisa ter o Spotify aberto e tocando em algum dispositivo.
-              </p>
-            </div>
-
-            {/* Status dos Dispositivos */}
-            <div className="mb-6">
-              <DeviceStatus 
-                onDeviceReady={handleDeviceReady}
-                showRefreshButton={true}
-              />
-            </div>
-
-            {/* Instruções */}
-            <div className="bg-white/5 rounded-xl p-6 mb-6 text-left">
-              <h4 className="text-white font-bold mb-4 flex items-center">
-                <Play className="w-5 h-5 mr-2 text-green-400" />
-                Como resolver:
-              </h4>
-              
-              <div className="space-y-3 text-purple-200 text-sm">
-                <div className="flex items-start space-x-3">
-                  <span className="bg-purple-500/30 text-purple-200 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</span>
-                  <p>Abra o <strong>Spotify</strong> em qualquer dispositivo (celular, computador, tablet, etc.)</p>
-                </div>
-                
-                <div className="flex items-start space-x-3">
-                  <span className="bg-purple-500/30 text-purple-200 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">2</span>
-                  <p>Toque <strong>qualquer música</strong> para ativar o dispositivo</p>
-                </div>
-                
-                <div className="flex items-start space-x-3">
-                  <span className="bg-purple-500/30 text-purple-200 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">3</span>
-                  <p>Clique em <strong>"🔄 Atualizar"</strong> acima para verificar novamente</p>
-                </div>
-                
-                <div className="flex items-start space-x-3">
-                  <span className="bg-green-500/30 text-green-200 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">4</span>
-                  <p>Quando aparecer <strong>"✅ Dispositivo ativo"</strong>, clique em <strong>"Continuar"</strong></p>
-                </div>
-              </div>
-            </div>
-
-            {/* Botões */}
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowDeviceCheck(false)}
-                className="flex-1 bg-gray-600/50 hover:bg-gray-600/70 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
-              >
-                Cancelar
-              </button>
-              
-              <button
-                onClick={() => {
-                  if (deviceReady) {
-                    setShowDeviceCheck(false);
-                    handleStartParty();
-                  } else {
-                    alert('❌ Ainda não há dispositivo ativo. Siga as instruções acima.');
-                  }
-                }}
-                disabled={!deviceReady}
-                className={`flex-1 font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg ${
-                  deviceReady 
-                    ? 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white' 
-                    : 'bg-gray-500/50 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                {deviceReady ? '✅ Continuar' : '⏳ Aguardando dispositivo...'}
-              </button>
-            </div>
-
-            {/* Dica */}
-            <div className="mt-6 p-4 bg-blue-500/20 border border-blue-400/30 rounded-xl">
-              <p className="text-blue-200 text-sm">
-                <strong>💡 Dica:</strong> O Juke controla o Spotify remotamente. Você pode usar qualquer dispositivo onde o Spotify esteja tocando!
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal removido - agora abre Spotify automaticamente */}
     </div>
   );
 };
