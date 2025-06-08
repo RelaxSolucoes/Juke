@@ -7,7 +7,8 @@ import {
   getCurrentUser,
   refreshSpotifyToken,
   isTokenExpired,
-  isTokenExpiringSoon
+  isTokenExpiringSoon,
+  clearOAuthData
 } from '../utils/spotify';
 
 interface AuthContextType {
@@ -154,6 +155,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('spotify-party-user');
     localStorage.removeItem('is-host');
     localStorage.removeItem('spotify_auth_code_used');
+    await clearOAuthData();
   };
 
   const setGuestUser = (name: string) => {

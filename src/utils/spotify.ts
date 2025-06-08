@@ -32,11 +32,17 @@ export const generatePartyCode = (): string => {
   return result;
 };
 
-export const getSpotifyAuthUrl = async (): Promise<string> => {
-  // Limpar dados anteriores
+// Função para limpar dados OAuth antigos
+export const clearOAuthData = (): void => {
   localStorage.removeItem('spotify_code_verifier');
   localStorage.removeItem('spotify_redirect_uri');
   localStorage.removeItem('spotify_auth_code_used');
+  console.log('OAuth data cleared');
+};
+
+export const getSpotifyAuthUrl = async (): Promise<string> => {
+  // Limpar dados anteriores completamente
+  clearOAuthData();
   
   // Gerar code verifier e challenge para PKCE
   const codeVerifier = generateRandomString(128);
@@ -45,17 +51,27 @@ export const getSpotifyAuthUrl = async (): Promise<string> => {
   localStorage.setItem('spotify_code_verifier', codeVerifier);
   localStorage.setItem('spotify_redirect_uri', spotifyConfig.redirectUri);
   
+  const state = generateRandomString(16);
+  
   const params = new URLSearchParams({
     client_id: spotifyConfig.clientId,
     response_type: 'code',
     redirect_uri: spotifyConfig.redirectUri,
     scope: spotifyConfig.scopes.join(' '),
-    state: generateRandomString(16),
+    state,
     code_challenge_method: 'S256',
-    code_challenge: codeChallenge
+    code_challenge: codeChallenge,
+    show_dialog: 'true' // Força mostrar dialog de autorização
   });
 
-  return `https://accounts.spotify.com/authorize?${params.toString()}`;
+  const authUrl = `https://accounts.spotify.com/authorize?${params.toString()}`;
+  console.log('Generated Spotify auth URL', { 
+    redirectUri: spotifyConfig.redirectUri,
+    clientId: spotifyConfig.clientId,
+    state 
+  });
+  
+  return authUrl;
 };
 
 export const generateRandomString = (length: number): string => {
@@ -84,17 +100,31 @@ export const exchangeCodeForTokens = async (code: string): Promise<{
   expires_in: number;
 } | null> => {
   try {
+    // Verificar se o código já foi usado
     const codeUsed = localStorage.getItem('spotify_auth_code_used');
     if (codeUsed === code) {
-      throw new Error('Authorization code already used');
+      console.warn('Authorization code already used, clearing and retrying...');
+      // Limpar dados antigos e forçar novo login
+      localStorage.removeItem('spotify_auth_code_used');
+      localStorage.removeItem('spotify_code_verifier');
+      localStorage.removeItem('spotify_redirect_uri');
+      throw new Error('Authorization code already used. Please try logging in again.');
     }
 
     const codeVerifier = localStorage.getItem('spotify_code_verifier');
     if (!codeVerifier) {
-      throw new Error('Code verifier not found');
+      console.error('Code verifier not found in localStorage');
+      throw new Error('Code verifier not found. Please try logging in again.');
     }
 
     const redirectUri = localStorage.getItem('spotify_redirect_uri') || spotifyConfig.redirectUri;
+
+    console.log('Exchanging code for tokens...', {
+      codeLength: code.length,
+      codeVerifierLength: codeVerifier.length,
+      redirectUri,
+      clientId: spotifyConfig.clientId
+    });
 
     const response = await fetch('https://accounts.spotify.com/api/token', {
       method: 'POST',
@@ -112,18 +142,35 @@ export const exchangeCodeForTokens = async (code: string): Promise<{
 
     if (!response.ok) {
       const errorData = await response.json();
+      console.error('Token exchange failed:', {
+        status: response.status,
+        error: errorData.error,
+        description: errorData.error_description
+      });
+      
+      // Limpar dados em caso de erro
+      localStorage.removeItem('spotify_code_verifier');
+      localStorage.removeItem('spotify_redirect_uri');
+      
       throw new Error(`Failed to exchange code for tokens: ${response.status} - ${errorData.error}: ${errorData.error_description}`);
     }
 
+    // Marcar código como usado APENAS após sucesso
     localStorage.setItem('spotify_auth_code_used', code);
     localStorage.removeItem('spotify_code_verifier');
     localStorage.removeItem('spotify_redirect_uri');
 
-    return await response.json();
+    const tokens = await response.json();
+    console.log('Tokens obtained successfully');
+    
+    return tokens;
   } catch (error) {
     console.error('Error exchanging code for tokens:', error);
+    
+    // Limpar todos os dados relacionados ao OAuth em caso de erro
     localStorage.removeItem('spotify_code_verifier');
     localStorage.removeItem('spotify_redirect_uri');
+    
     return null;
   }
 };

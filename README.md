@@ -192,6 +192,23 @@ CREATE POLICY "Allow all operations on guests" ON guests FOR ALL USING (true);
 CREATE POLICY "Allow all operations on tracks" ON tracks FOR ALL USING (true);
 ```
 
+## 🔧 Correções Recentes (v2.1.3)
+
+### ✅ Problemas Corrigidos
+- **OAuth Spotify:** Corrigido erro "invalid_grant" ao fazer login
+  - Melhor tratamento de códigos de autorização reutilizados
+  - Limpeza automática de dados OAuth antigos
+  - Logs detalhados para debugging
+  
+- **Content Security Policy:** Adicionado suporte ao Google reCAPTCHA
+  - CSP atualizado para permitir conexões com Google
+  - Correção de erros de bloqueio de recursos
+
+- **Tratamento de Erros:** Interface melhorada para erros de autenticação
+  - Mensagens de erro mais claras
+  - Redirecionamento automático após erros
+  - Prevenção de múltiplas tentativas de callback
+
 ## 📊 Funcionalidades Técnicas
 
 ### 🎵 Como Funciona a Reprodução
