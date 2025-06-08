@@ -10,7 +10,7 @@ Uma aplicação moderna para criar festas musicais colaborativas usando o Spotif
 
 ### 🎯 Para Hosts (Criadores da Festa)
 - **Criar Festa:** Gere um código único para sua festa
-- **Busca Musical Premium:** Sistema de busca em tempo real do Spotify
+- **Busca Musica** Sistema de busca em tempo real do Spotify
 - **Gerenciar Convidados:** Veja quem está na festa
 - **Playlist de Fallback:** Inicie uma playlist automática quando não há músicas na fila
 - **Controle Total:** Encerre a festa quando quiser
@@ -167,29 +167,16 @@ CREATE TABLE guests (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Tabela de músicas
-CREATE TABLE tracks (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  party_id UUID REFERENCES parties(id) ON DELETE CASCADE,
-  spotify_id TEXT NOT NULL,
-  name TEXT NOT NULL,
-  artist TEXT NOT NULL,
-  album TEXT,
-  duration_ms INTEGER,
-  image_url TEXT,
-  added_by TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- Nota: Tabela de músicas removida - músicas vão direto para o Spotify
+-- O sistema foi simplificado para adicionar músicas diretamente na fila do Spotify
 
 -- Políticas RLS (Row Level Security)
 ALTER TABLE parties ENABLE ROW LEVEL SECURITY;
 ALTER TABLE guests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tracks ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de acesso público (ajuste conforme necessário)
 CREATE POLICY "Allow all operations on parties" ON parties FOR ALL USING (true);
 CREATE POLICY "Allow all operations on guests" ON guests FOR ALL USING (true);
-CREATE POLICY "Allow all operations on tracks" ON tracks FOR ALL USING (true);
 ```
 
 ## 🔧 Correções Recentes (v2.1.3)
@@ -213,15 +200,15 @@ CREATE POLICY "Allow all operations on tracks" ON tracks FOR ALL USING (true);
 
 ### 🎵 Como Funciona a Reprodução
 - **Playlist de Fallback:** Host inicia uma playlist automática no Spotify
-- **Adição de Músicas:** Convidados adicionam músicas à fila nativa do Spotify via API
+- **Adição de Músicas:** Convidados adicionam músicas diretamente à fila nativa do Spotify via API
 - **Controle Remoto:** App controla dispositivos Spotify existentes (celular, desktop, etc.)
-- **Histórico:** Supabase armazena quais músicas foram adicionadas (não gerencia reprodução)
+- **Fila Gerenciada pelo Spotify:** Músicas são adicionadas diretamente na fila do Spotify (não salvas no Supabase)
 - **Dependência:** Requer dispositivo Spotify ativo e conta Premium
 
 ### 🔄 Real-time
 - Sincronização em tempo real via Supabase
 - Atualizações automáticas da lista de convidados
-- Histórico de músicas adicionadas atualizado instantaneamente
+- Dados da festa sincronizados instantaneamente
 - Reprodução gerenciada pelo Spotify (fila nativa)
 
 ### 🛡️ Segurança
@@ -244,11 +231,20 @@ CREATE POLICY "Allow all operations on tracks" ON tracks FOR ALL USING (true);
 
 ## 📈 Melhorias Recentes
 
-### v2.1.2 - Correção de Documentação
-- ✅ **Documentação corrigida:** Descrição técnica agora reflete a realidade do sistema
+### v2.2.0 - Sistema Híbrido Free + Premium
+- ✅ **Arquitetura Híbrida:** Sistema Free (atual) + Premium (futuro) implementado
+- ✅ **Context de Planos:** Gerenciamento de funcionalidades Free/Premium
+- ✅ **Interface Premium:** Componentes de upgrade e demonstração
+- ✅ **Modo Desenvolvedor:** Acesso secreto para testes (dev=true)
+- ✅ **Documentação Completa:** Roadmap detalhado das funcionalidades premium
+- ✅ **Base Sólida:** Free continua 100% funcional, Premium como adicional
+
+### v2.1.4 - Correção Final de Documentação
+- ✅ **Documentação corrigida:** Sistema simplificado - músicas vão direto para o Spotify
 - ✅ Esclarecido que usa Spotify Web API (não Web Playback SDK)
 - ✅ Explicado que reprodução é gerenciada pelo Spotify (não app)
-- ✅ Histórico vs fila: Supabase armazena histórico, Spotify gerencia reprodução
+- ✅ **Correção CSP:** WebSocket do Supabase funcionando sem erros
+- ✅ **Fila Simplificada:** Músicas adicionadas diretamente na fila do Spotify (não salvas no Supabase)
 
 ### v2.1.1 - Correção de Acentos
 - ✅ **Correção crítica:** Nomes com acentos agora são preservados corretamente
@@ -285,12 +281,28 @@ Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalh
 
 ## 🎯 Roadmap
 
-- [ ] Sistema de votação para músicas
+### 🆓 Versão Free (Atual)
+- [x] Criação e entrada em festas
+- [x] Busca e adição de músicas
+- [x] Sistema em tempo real
+- [x] Interface responsiva
+- [x] Playlist de fallback
+
+### 💎 Versão Premium (Em Desenvolvimento)
+- [ ] **Modo TV** - Tela dedicada para mostrar música atual e fila
+- [ ] **Visualização da Fila** - Ver todas as músicas que vão tocar
+- [ ] **Sistema de Votação** - Músicas mais votadas tocam primeiro
+- [ ] **Gerenciamento de Fila** - Host pode remover músicas
+- [ ] **Player Integrado** - Controles avançados no navegador
+- [ ] **Controles Avançados** - Volume, posição, pular músicas
+
+### 🚀 Futuro
 - [ ] Chat em tempo real
 - [ ] Histórico de festas
 - [ ] Playlists personalizadas
-- [ ] Integração com outras plataformas de música
 - [ ] App mobile nativo
+
+> 📋 **Documentação completa:** Veja `PREMIUM_ROADMAP.md` para detalhes técnicos
 
 ## 📞 Suporte
 

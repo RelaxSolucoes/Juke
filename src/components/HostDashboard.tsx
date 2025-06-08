@@ -28,11 +28,14 @@ import {
 import QRCode from 'qrcode';
 import { useAuth } from '../contexts/AuthContext';
 import { useParty } from '../contexts/PartyContext';
+import { usePlan } from '../contexts/PlanContext';
 import { formatDuration } from '../utils/spotify';
 import { NowPlaying } from './NowPlaying';
+import { PremiumUpgrade } from './PremiumUpgrade';
 
 export const HostDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
+  const { isPremium } = usePlan();
   const { 
     currentParty, 
     queue, 
@@ -612,6 +615,11 @@ export const HostDashboard: React.FC = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {/* Banner Premium */}
+        {!isPremium && (
+          <PremiumUpgrade feature="funcionalidades avançadas" />
+        )}
+        
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Busca Premium - Área Principal */}
           <div className="lg:col-span-3">

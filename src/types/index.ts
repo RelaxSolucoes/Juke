@@ -70,3 +70,41 @@ declare global {
     };
   }
 }
+
+// Sistema Híbrido Free/Premium
+export interface PartyPlan {
+  type: 'free' | 'premium';
+  features: {
+    queueVisualization: boolean;
+    queueManagement: boolean;
+    votingSystem: boolean;
+    webPlaybackSDK: boolean;
+    tvMode: boolean;
+    advancedControls: boolean;
+  };
+}
+
+export interface PremiumQueueItem {
+  id: string;
+  party_id: string;
+  track_uri: string;
+  track_name: string;
+  track_artist: string;
+  track_album: string;
+  track_image: string;
+  track_duration_ms: number;
+  added_by: string;
+  added_by_name: string;
+  votes: number;
+  voters: string[]; // IDs dos usuários que votaram
+  position: number;
+  status: 'pending' | 'playing' | 'played';
+  created_at: string;
+}
+
+export interface VoteAction {
+  user_id: string;
+  user_name: string;
+  queue_item_id: string;
+  action: 'vote' | 'unvote';
+}

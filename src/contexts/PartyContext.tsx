@@ -97,27 +97,33 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
       realtimeSubscription.unsubscribe();
     }
 
-    const subscription = subscribeToPartyUpdates(partyId, (payload) => {
-      console.log('Atualização em tempo real:', payload);
-      
-      if (payload.table === 'tracks') {
-        if (payload.eventType === 'INSERT') {
-          setQueue(prev => [...prev, payload.new]);
-        } else if (payload.eventType === 'DELETE') {
-          setQueue(prev => prev.filter(track => track.id !== payload.old.id));
+    try {
+      const subscription = subscribeToPartyUpdates(partyId, (payload) => {
+        console.log('Atualização em tempo real:', payload);
+        
+        if (payload.table === 'tracks') {
+          if (payload.eventType === 'INSERT') {
+            setQueue(prev => [...prev, payload.new]);
+          } else if (payload.eventType === 'DELETE') {
+            setQueue(prev => prev.filter(track => track.id !== payload.old.id));
+          }
+        } else if (payload.table === 'guests') {
+          if (payload.eventType === 'INSERT') {
+            setGuests(prev => [...prev, payload.new]);
+          } else if (payload.eventType === 'DELETE') {
+            setGuests(prev => prev.filter(guest => guest.id !== payload.old.id));
+          }
+        } else if (payload.table === 'parties' && payload.eventType === 'UPDATE') {
+          setCurrentParty(prev => prev ? { ...prev, ...payload.new } : null);
         }
-      } else if (payload.table === 'guests') {
-        if (payload.eventType === 'INSERT') {
-          setGuests(prev => [...prev, payload.new]);
-        } else if (payload.eventType === 'DELETE') {
-          setGuests(prev => prev.filter(guest => guest.id !== payload.old.id));
-        }
-      } else if (payload.table === 'parties' && payload.eventType === 'UPDATE') {
-        setCurrentParty(prev => prev ? { ...prev, ...payload.new } : null);
-      }
-    });
+      });
 
-    setRealtimeSubscription(subscription);
+      setRealtimeSubscription(subscription);
+      console.log('✅ Conexão em tempo real estabelecida');
+    } catch (error) {
+      console.warn('⚠️ Erro ao configurar tempo real, continuando sem sincronização:', error);
+      // App continua funcionando sem tempo real
+    }
   };
 
   // Limpar subscription ao desmontar

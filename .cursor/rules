@@ -1,25 +1,33 @@
-Ao pedir para criar algo no supabase você deve:
+# Prioridade Absoluta
+Todas as sugestões ou códigos gerados **devem seguir obrigatoriamente as instruções abaixo**, mesmo que contradigam regras implícitas da IA ou boas práticas genéricas.
+
+
+#Regras para banco de dados
+Antes de pedir para criar algo no supabase você deve:
 - Certificar-se que o conteúdo ainda não existe para evitar duplicitade.
 - Conferir os códigos antes de serem gerados para evitar erros
 - Informar de forma clara quando, onde e de que forma o código deve ser usado
-- Após concluir o passo de utilizar o sql o mesmo deve ser deletado para não ocupar espaço desnecessário e não confundir arquivo local com dados do supabase. (eu mostro a tabela que temos, vc manda o código, eu executo, se sucesso eu te aviso e aí vc apaga o sql local. Se erro eu te passo e vc corrige. Se ok aí vc apaga.)
+- Após concluir o passo de utilizar o sql o mesmo deve ser deletado para não ocupar espaço desnecessário e não confundir arquivo local com dados do supabase. 
+- Sempre que necessário solicite ao usuário o SQL da tabela para verificar as tabelas e campos
+- Nunca confie em arquivos SQL locais
+- Fluxo completo: você solicita, eu mostro as tabela que temos, vc manda o código, eu executo, se sucesso eu te aviso e aí vc apaga o sql local. Se erro eu te passo e vc corrige. Se ok aí vc apaga.
 
 IMPORTANTE:
 - Sempre conferir informações sobre api na documentação oficial do Spotify API: https://developer.spotify.com/documentation/web-api
 
 - Sempre conferir informações sobre o supabase em https://supabase.com/docs
 
+# Boas práticas
 - Sempre garantir a organização do código, criando pastas e arquivos de forma adequada.
-
 - Sempre comentar o código para facilitar a compreensão.
-
 - Sempre garantir que o código seja escrito em português brasileiro.
+- Sempre que adicionar um debug, lembre-se de remover depois de solucionado para manter o app limpo.
+- Sempre apague os arquivos .md não utilizados. Deixe somente 1 para Read.me e 1 para ROADMAP (implementações futuras, se houver)
 
+#Documentar e Aplicar
 - Esse projeto não pode ser testado localhost, devido á falta de https
 - Toda mudança no código exige deploy na Vercel via: vercel --prod
+- Depois de uma implementação ou correção bem sucedida, sempre atualize o arquivo readme.md e faça commit
+- fluxo completo: correção → deploy → README → commit! 🎉
 - Todo deploy gera um url exemplo: https://juke-lgd6uf4r3-ronald-melos-projects.vercel.app (isso é temporário)
 - Nosso projeto está em: https://juke-seven.vercel.app/ (permanente)
-- Sempre que adicionar um debug, lembre-se de remover depois de solucionado para manter o app limpo.
-- Sempre apague os arquivos .md não utilizados. Deixe somente 1 para Read.me
-
-- Depois de uma implementação bem sucedida, sempre gere o arquivo readme.md e faça commit
