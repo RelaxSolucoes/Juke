@@ -32,10 +32,13 @@ import { usePlan } from '../contexts/PlanContext';
 import { formatDuration } from '../utils/spotify';
 import { NowPlaying } from './NowPlaying';
 import { PremiumUpgrade } from './PremiumUpgrade';
+import { OnboardingGuide, useOnboarding } from './OnboardingGuide';
+import { HostCallToAction } from './HostCallToAction';
 
 export const HostDashboard: React.FC = () => {
   const { user, signOut } = useAuth();
   const { isPremium } = usePlan();
+  const { showOnboarding } = useOnboarding('host');
   const { 
     currentParty, 
     queue, 
@@ -619,6 +622,15 @@ export const HostDashboard: React.FC = () => {
         {!isPremium && (
           <PremiumUpgrade feature="funcionalidades avançadas" />
         )}
+
+        {/* Host Call to Action */}
+        <HostCallToAction
+          onStartPlaylist={handleStartFallbackPlaylist}
+          onOpenShareModal={openShareModal}
+          hasStartedPlaylist={fallbackPlaylistStatus === 'playing'}
+          guestCount={guests.length}
+          partyCode={currentParty?.code || ''}
+        />
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Busca Premium - Área Principal */}

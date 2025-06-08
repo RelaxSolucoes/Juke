@@ -17,9 +17,12 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useParty } from '../contexts/PartyContext';
 import { formatDuration } from '../utils/spotify';
+import { OnboardingGuide, useOnboarding } from './OnboardingGuide';
+import { GuestWelcome } from './GuestWelcome';
 
 export const GuestView: React.FC = () => {
   const { user, signOut } = useAuth();
+  const { showOnboarding } = useOnboarding('guest');
   const { 
     currentParty, 
     guests, 
@@ -212,6 +215,14 @@ export const GuestView: React.FC = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {/* Guest Welcome */}
+        <GuestWelcome
+          partyName={currentParty.name}
+          hostName={currentParty.host?.name || 'Host'}
+          guestCount={guests.length}
+          hasAddedSongs={addedTracks.size > 0}
+        />
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Busca Premium - Área Principal */}
           <div className="lg:col-span-3">
