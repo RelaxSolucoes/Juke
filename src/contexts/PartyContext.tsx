@@ -387,14 +387,16 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
       const fallbackPlaylist = await getFallbackPlaylist(currentParty.code);
       
       if (!fallbackPlaylist) {
-        throw new Error('Nenhuma playlist de fallback configurada. Configure uma playlist na criação da festa ou adicione músicas manualmente.');
+        console.log('⚠️ Nenhuma playlist configurada - festa iniciada sem música de fundo');
+        console.log('✅ Festa iniciada! Aguardando convidados adicionarem músicas...');
+        return; // Festa pode iniciar sem playlist - é OPCIONAL
       }
 
       console.log('🎵 Iniciando playlist configurada:', fallbackPlaylist.playlistName);
       await startPlaylistPlayback(fallbackPlaylist.playlistUri, currentParty.code);
       console.log('✅ Playlist de fallback iniciada:', fallbackPlaylist.playlistName);
     } catch (error) {
-      console.error('Erro ao iniciar playlist de fallback:', error);
+      console.error('Erro ao iniciar festa:', error);
       
       // Melhorar mensagem de erro baseada no tipo
       if (error instanceof Error) {
@@ -402,12 +404,10 @@ export const PartyProvider: React.FC<PartyProviderProps> = ({ children }) => {
           throw error; // Manter mensagem específica
         } else if (error.message.includes('Premium')) {
           throw error; // Manter mensagem específica
-        } else if (error.message.includes('playlist de fallback configurada')) {
-          throw error; // Manter mensagem original
         } else if (error.message.includes('404')) {
           throw new Error('Nenhum dispositivo Spotify ativo encontrado. Abra o Spotify em algum dispositivo e tente novamente.');
         } else {
-          throw new Error('Erro ao iniciar playlist. Verifique se o Spotify está ativo e tente novamente.');
+          throw new Error('Erro ao iniciar festa. Verifique se o Spotify está ativo e tente novamente.');
         }
       }
       

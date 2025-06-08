@@ -606,7 +606,7 @@ export const HostDashboard: React.FC = () => {
               {fallbackPlaylistStatus === 'starting' && (
                 <div className="bg-yellow-500/20 text-yellow-300 px-4 py-2 rounded-xl flex items-center space-x-2 border border-yellow-500/30">
                   <div className="w-4 h-4 border-2 border-yellow-300 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="hidden sm:inline">Iniciando...</span>
+                  <span className="hidden sm:inline">Iniciando Festa...</span>
                   <span className="sm:hidden">⏳</span>
                 </div>
               )}
@@ -615,9 +615,9 @@ export const HostDashboard: React.FC = () => {
                 <div className="bg-green-500/30 text-green-200 px-4 py-2 rounded-xl flex items-center space-x-2 border border-green-400/50">
                   <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
                   <span className="hidden sm:inline">
-                    {fallbackPlaylistName ? `♪ ${fallbackPlaylistName}` : '♪ Tocando'}
+                    {fallbackPlaylistName ? `🎉 ${fallbackPlaylistName}` : '🎉 Festa Ativa'}
                   </span>
-                  <span className="sm:hidden">♪</span>
+                  <span className="sm:hidden">🎉</span>
                 </div>
               )}
 

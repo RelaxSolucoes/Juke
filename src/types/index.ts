@@ -57,19 +57,8 @@ export interface SpotifyTrackSearch {
   uri: string;
 }
 
-// Spotify Web Playback SDK types
-declare global {
-  interface Window {
-    onSpotifyWebPlaybackSDKReady: () => void;
-    Spotify: {
-      Player: new (options: {
-        name: string;
-        getOAuthToken: (cb: (token: string) => void) => void;
-        volume?: number;
-      }) => any;
-    };
-  }
-}
+// Removido: Spotify Web Playback SDK types
+// O Juke usa apenas Spotify Web API, não o SDK de reprodução
 
 // Sistema Híbrido Free/Premium
 export interface PartyPlan {

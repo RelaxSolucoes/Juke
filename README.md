@@ -179,9 +179,16 @@ CREATE POLICY "Allow all operations on parties" ON parties FOR ALL USING (true);
 CREATE POLICY "Allow all operations on guests" ON guests FOR ALL USING (true);
 ```
 
-## 🔧 Correções Recentes (v2.4.0)
+## 🔧 Correções Recentes (v2.4.1)
 
-### ✅ Verificação Inteligente de Dispositivos
+### ✅ Correções Críticas
+- **SDK Residual Eliminado:** Removido "Juke Party Player" fake do Web Playback SDK
+- **Playlist Realmente Opcional:** Festa pode iniciar sem playlist de fundo configurada
+- **Limpeza Completa:** Removidos tipos, mocks e resíduos do Web Playback SDK
+- **Status Correto:** Interface mostra "🎉 Festa Ativa" ao invés de "♪ Tocando"
+- **Mensagens Claras:** "Festa iniciada! Aguardando convidados adicionarem músicas..."
+
+### ✅ Verificação Inteligente de Dispositivos (v2.4.0)
 - **Verificação Automática:** Sistema verifica dispositivos Spotify ativos antes de qualquer ação
 - **API Oficial:** Implementado baseado na documentação oficial do Spotify Web API
 - **Botão Corrigido:** "Iniciar Festa" substitui o confuso botão "Playlist"
@@ -245,6 +252,13 @@ CREATE POLICY "Allow all operations on guests" ON guests FOR ALL USING (true);
 - Error handling robusto
 
 ## 📈 Melhorias Recentes
+
+### v2.4.1 - Correções Críticas de SDK e Playlist Opcional
+- ✅ **SDK Residual Removido:** Eliminado "Juke Party Player" fake do Web Playback SDK
+- ✅ **Playlist Realmente Opcional:** Festa pode iniciar sem playlist de fundo
+- ✅ **Limpeza de Código:** Removidos tipos e mocks do Web Playback SDK
+- ✅ **Status Correto:** "🎉 Festa Ativa" ao invés de "♪ Tocando"
+- ✅ **Mensagens Claras:** "Festa iniciada! Aguardando convidados adicionarem músicas..."
 
 ### v2.4.0 - Verificação Inteligente de Dispositivos Spotify
 - ✅ **Verificação de Dispositivos:** Sistema baseado na API oficial do Spotify
