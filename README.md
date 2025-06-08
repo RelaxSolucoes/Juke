@@ -179,15 +179,16 @@ CREATE POLICY "Allow all operations on parties" ON parties FOR ALL USING (true);
 CREATE POLICY "Allow all operations on guests" ON guests FOR ALL USING (true);
 ```
 
-## 🔧 Melhorias Recentes (v2.5.0)
+## 🔧 Melhorias Recentes (v2.5.1)
 
-### 🚀 Auto-Start Inteligente do Spotify
-- **Abre Spotify Automaticamente:** Sistema detecta dispositivo e abre app/web conforme necessário
-- **Play Automático:** Dá play na playlist (se configurada) ou música atual do Spotify
-- **UX Revolucionária:** Removido modal gigante - experiência direta e fluida
-- **Multiplataforma:** Funciona perfeitamente em Android, iOS, Desktop e Web
-- **Retry Inteligente:** Se primeira tentativa falha, abre Spotify e tenta novamente
-- **Zero Configuração:** Usuário clica "Iniciar Festa" e tudo funciona magicamente
+### 🚀 Auto-Start Inteligente do Spotify (Versão Robusta)
+- **Verificação de Dispositivos:** Sistema verifica dispositivos ativos antes de qualquer ação
+- **Transferência de Playback:** Ativa automaticamente dispositivos inativos usando API oficial
+- **URLs de Protocolo Corretas:** Usa `spotify://` para desktop e intents específicos para mobile
+- **Detecção de Desktop:** Detecta e abre corretamente app desktop no Windows/macOS
+- **Fallback Inteligente:** Se app não estiver instalado, abre web player automaticamente
+- **Tratamento de Erros 404:** Resolve completamente o problema de "no active device found"
+- **Baseado na Documentação Oficial:** Implementação seguindo as melhores práticas do Spotify Web API
 
 ### ✅ Correções Críticas (v2.4.1)
 - **SDK Residual Eliminado:** Removido "Juke Party Player" fake do Web Playback SDK
@@ -260,6 +261,14 @@ CREATE POLICY "Allow all operations on guests" ON guests FOR ALL USING (true);
 - Error handling robusto
 
 ## 📈 Melhorias Recentes
+
+### v2.5.1 - Auto-Start Robusta do Spotify 🚀
+- ✅ **Verificação de Dispositivos:** Usa endpoint `/me/player/devices` para verificar dispositivos ativos
+- ✅ **Transferência de Playback:** Ativa dispositivos inativos usando endpoint `/me/player` (PUT)
+- ✅ **URLs de Protocolo Corretas:** `spotify://` para desktop, intents para Android, schemes para iOS
+- ✅ **Detecção Precisa:** Identifica corretamente Windows/macOS e abre app desktop
+- ✅ **Tratamento de Erro 404:** Resolve completamente "no active device found"
+- ✅ **Baseado na Documentação:** Implementação seguindo Spotify Web API oficial
 
 ### v2.5.0 - Auto-Start Inteligente do Spotify 🚀
 - ✅ **Abre Spotify Automaticamente:** Detecta dispositivo e abre app/web conforme necessário

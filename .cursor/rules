@@ -25,9 +25,9 @@ IMPORTANTE:
 - Sempre apague os arquivos .md não utilizados. Deixe somente 1 para Read.me e 1 para ROADMAP (implementações futuras, se houver)
 
 #Documentar e Aplicar
+- fluxo completo: correção → Confirmação → deploy → README → commit! 🎉
 - Esse projeto não pode ser testado localhost, devido á falta de https
 - Toda mudança no código exige deploy na Vercel via: vercel --prod
-- Depois de uma implementação ou correção bem sucedida, sempre atualize o arquivo readme.md e faça commit
-- fluxo completo: correção → deploy → README → commit! 🎉
+- Depois de uma implementação ou correção bem sucedida (confirmada pelo usuário), sempre atualize o arquivo readme.md e faça commit
 - Todo deploy gera um url exemplo: https://juke-lgd6uf4r3-ronald-melos-projects.vercel.app (isso é temporário)
 - Nosso projeto está em: https://juke-seven.vercel.app/ (permanente)
