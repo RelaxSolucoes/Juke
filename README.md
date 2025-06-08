@@ -231,6 +231,14 @@ CREATE POLICY "Allow all operations on guests" ON guests FOR ALL USING (true);
 
 ## 📈 Melhorias Recentes
 
+### v2.3.0 - UX Intuitiva e Auto-Explicativa
+- ✅ **Onboarding Interativo:** Tutorial passo-a-passo para novos usuários
+- ✅ **Host Call-to-Action:** Guia visual claro para configurar festa
+- ✅ **Guest Welcome:** Boas-vindas explicativas para convidados
+- ✅ **Progress Tracking:** Barras de progresso e status visual
+- ✅ **Interface Auto-Explicativa:** Baseada em padrões de apps populares
+- ✅ **Menos Confusão:** Usuários sabem exatamente o que fazer
+
 ### v2.2.0 - Sistema Híbrido Free + Premium
 - ✅ **Arquitetura Híbrida:** Sistema Free (atual) + Premium (futuro) implementado
 - ✅ **Context de Planos:** Gerenciamento de funcionalidades Free/Premium
