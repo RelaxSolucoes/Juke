@@ -11,7 +11,8 @@ import {
   Sparkles,
   Zap,
   Heart,
-  Star
+  Star,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useParty } from '../contexts/PartyContext';
@@ -94,14 +95,52 @@ export const GuestView: React.FC = () => {
 
   if (!currentParty) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-white mb-4">
-            Festa não encontrada
-          </h2>
-          <p className="text-purple-200">
-            A festa pode ter sido encerrada ou não existe.
-          </p>
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20 shadow-2xl text-center">
+            {/* Ícone de Erro */}
+            <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/30">
+              <Music className="w-10 h-10 text-red-400" />
+            </div>
+            
+            {/* Título e Descrição */}
+            <h2 className="text-2xl font-bold text-white mb-4">
+              🚫 Festa não encontrada
+            </h2>
+            <p className="text-purple-200 mb-8 leading-relaxed">
+              A festa pode ter sido encerrada pelo host ou o código pode estar incorreto.
+            </p>
+            
+            {/* Botões de Ação */}
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  // Limpar festa atual e voltar para tela de login
+                  leaveParty();
+                  signOut();
+                }}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-xl transition-all font-medium flex items-center justify-center space-x-2"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Tentar Outra Festa</span>
+              </button>
+              
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl transition-all border border-white/20 flex items-center justify-center space-x-2"
+              >
+                <RefreshCw className="w-5 h-5" />
+                <span>Recarregar Página</span>
+              </button>
+            </div>
+            
+            {/* Dica */}
+            <div className="mt-6 p-4 bg-blue-500/20 border border-blue-400/30 rounded-xl">
+              <p className="text-blue-200 text-sm">
+                💡 <strong>Dica:</strong> Verifique se o código da festa está correto ou peça um novo código para o host.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     );
